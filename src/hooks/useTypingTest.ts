@@ -272,9 +272,9 @@ export function useTypingTest(): UseTypingTestReturn {
       default: {
         // Generate random words from word bank
         const words = getWordBank();
-        // Ensure minimum words for at least 3 lines (minimum 80 words)
-        const minWords = 80;
-        const wordsNeeded = Math.max(minWords, Math.ceil((time / 60) * 50)); // 50 words per minute, min 80
+        // Ensure minimum words for at least 5 lines (minimum 150 words for proper display)
+        const minWords = 150;
+        const wordsNeeded = Math.max(minWords, Math.ceil((time / 60) * 70)); // 70 words per minute, min 150
         let text = '';
         
         for (let i = 0; i < wordsNeeded; i++) {
@@ -309,48 +309,48 @@ export function useTypingTest(): UseTypingTestReturn {
       case 'words': {
         if (diff === 'hard') {
           const result = await fetchDatamuseWordsApi('hard', 200);
-          return ensureMinWords(result.text, 80, async () => {
+          return ensureMinWords(result.text, 150, async () => {
             const more = await fetchDatamuseWordsApi('hard', 200);
             return more.text;
           });
         }
         const result = await fetchRandomWordsApi(200);
-        return ensureMinWords(result.text, 80, async () => {
+        return ensureMinWords(result.text, 150, async () => {
           const more = await fetchRandomWordsApi(200);
           return more.text;
         });
       }
       case 'sentences': {
         const result = await fetchQuotableRandomApi(80, 200);
-        return ensureMinWords(result.text, 60, async () => {
+        return ensureMinWords(result.text, 110, async () => {
           const more = await fetchQuotableRandomApi(80, 200);
           return more.text;
         });
       }
       case 'paragraph': {
         const result = await fetchWikipediaSummaryApi();
-        return ensureMinWords(result.text, 80, async () => {
+        return ensureMinWords(result.text, 130, async () => {
           const more = await fetchWikipediaSummaryApi();
           return more.text;
         });
       }
       case 'numbers': {
         const result = await fetchNumbersApi(5);
-        return ensureMinWords(result.text, 40, async () => {
+        return ensureMinWords(result.text, 80, async () => {
           const more = await fetchNumbersApi(5);
           return more.text;
         });
       }
       case 'quotes': {
         const result = await fetchQuotableRandomApi(150, 350);
-        return ensureMinWords(result.text, 60, async () => {
+        return ensureMinWords(result.text, 110, async () => {
           const more = await fetchQuotableRandomApi(150, 350);
           return more.text;
         });
       }
       case 'programming': {
         const result = await fetchProgrammingReadmeApi();
-        return ensureMinWords(result.text, 80, async () => {
+        return ensureMinWords(result.text, 130, async () => {
           const more = await fetchProgrammingReadmeApi();
           return more.text;
         });
@@ -358,7 +358,7 @@ export function useTypingTest(): UseTypingTestReturn {
       case 'infinite':
       default: {
         const result = await fetchInfiniteTextApi();
-        return ensureMinWords(result.text, 80, async () => {
+        return ensureMinWords(result.text, 150, async () => {
           const more = await fetchInfiniteTextApi();
           return more.text;
         });
@@ -368,21 +368,58 @@ export function useTypingTest(): UseTypingTestReturn {
 
   // Load more text (for infinite typing - enhanced per mode)
   const loadMoreText = useCallback(async () => {
-    if (isLoadingRef.current) return;
+    if (isLoadingRef.current) {
+      console.log('⏳ Already loading text, skipping...');
+      return;
+    }
     
     isLoadingRef.current = true;
+    console.log('📥 Loading more text for mode:', testMode);
+    
+    // Safety timeout: force reset loading ref after 10 seconds
+    const safetyTimeout = setTimeout(() => {
+      if (isLoadingRef.current) {
+        console.warn('⚠️ Loading timeout - forcing ref reset');
+        isLoadingRef.current = false;
+      }
+    }, 10000);
     
     try {
+      // Try API fetch
       const nextText = await fetchModeText(testMode, language, difficulty, totalTime);
-      setPromptText(prev => prev + " " + nextText);
-      lastLoadPositionRef.current = (promptTextRef.current + " " + nextText).length;
-    } catch {
-      const fallbackText = await fetchQuotesFromAPI();
-      setPromptText(prev => prev + " " + fallbackText);
+      if (nextText && nextText.trim().length > 0) {
+        setPromptText(prev => {
+          const newText = prev + " " + nextText;
+          return newText;
+        });
+        console.log('✅ Loaded', nextText.split(' ').length, 'more words');
+      } else {
+        // If API returns empty, generate fallback immediately
+        throw new Error('Empty text from API');
+      }
+    } catch (error) {
+      console.error('❌ Load error, using fallback:', error);
+      try {
+        // Try fallback API
+        const fallbackText = await fetchQuotesFromAPI();
+        if (fallbackText && fallbackText.trim()) {
+          setPromptText(prev => prev + " " + fallbackText);
+          console.log('✅ Loaded fallback text');
+        } else {
+          throw new Error('Fallback API also empty');
+        }
+      } catch (fallbackError) {
+        // Generate guaranteed local text if all APIs fail
+        console.warn('⚠️ All APIs failed, generating local text');
+        const localText = generatePrompt(difficulty, 60, '', testMode, language);
+        setPromptText(prev => prev + " " + localText);
+        console.log('✅ Generated local fallback text');
+      }
     } finally {
+      clearTimeout(safetyTimeout);
       isLoadingRef.current = false;
     }
-  }, [fetchModeText, fetchQuotesFromAPI, testMode, language, difficulty, totalTime]);
+  }, [fetchModeText, fetchQuotesFromAPI, generatePrompt, testMode, language, difficulty, totalTime]);
 
 
   const loadNewPrompt = useCallback(async () => {
@@ -423,10 +460,23 @@ export function useTypingTest(): UseTypingTestReturn {
         setPromptText(defaultText);
         console.log('Default text loaded:', defaultText.substring(0, 50) + '...');
       }
-    } else {
-      console.log('Prompt text loaded successfully. Length:', promptText.length, 'Words:', promptText.split(' ').length);
     }
   }, [promptText, difficulty, language, generatePrompt]);
+
+  // ULTIMATE SAFETY: If user is within 200 chars of end, force immediate text generation
+  useEffect(() => {
+    if (!testStarted) return;
+    
+    const remainingChars = Math.max(0, promptText.length - inputValue.length);
+    
+    if (remainingChars < 200) {
+      console.error('🚨 CRITICAL: Only', remainingChars, 'chars left! Force generating text NOW!');
+      // Don't wait for APIs, generate immediately
+      const criticalText = generatePrompt(difficulty, 60, '', testMode, language);
+      setPromptText(prev => prev + " " + criticalText);
+      console.log('🚨 Critical text added:', criticalText.split(' ').length, 'words');
+    }
+  }, [inputValue.length, promptText.length, testStarted, difficulty, testMode, language, generatePrompt]);
 
   const calculateStats = useCallback((input: string, prompt: string, timeElapsed: number) => {
     if (input.length === 0) {
@@ -471,18 +521,45 @@ export function useTypingTest(): UseTypingTestReturn {
   // Calculate elapsed time for display
   const elapsedTime = testStarted ? Math.round((Date.now() - startTimeRef.current) / 1000) : 0;
 
-  // Auto-load more text when user has typed 70% of current text (ALL MODES)
+  // Auto-load more text when remaining buffer gets low (ALL MODES - GUARANTEED INFINITE)
   useEffect(() => {
+    if (!testStarted) return;
+    
+    const remainingChars = Math.max(0, promptText.length - inputValue.length);
+    const percentTyped = promptText.length > 0 ? inputValue.length / promptText.length : 0;
+    
+    // Load VERY early and aggressively - at 40% OR 1000 chars remaining
     const shouldAutoLoad = 
-      testStarted && 
-      inputValue.length > promptText.length * 0.7 && 
+      (percentTyped > 0.4 || remainingChars < 1000) &&
       !isLoadingRef.current;
       
     if (shouldAutoLoad) {
-      console.log('🔄 Auto-loading more text for current mode...');
-      loadMoreText();
+      console.log('🔄 Auto-loading more text... Remaining:', remainingChars, 'chars, Progress:', Math.round(percentTyped * 100) + '%');
+      loadMoreText().catch(err => {
+        console.error('Load more text failed:', err);
+        // Force reset ref on error
+        isLoadingRef.current = false;
+      });
     }
   }, [inputValue.length, promptText.length, testStarted, loadMoreText]);
+
+  // SAFETY: Emergency load if text is about to run out
+  useEffect(() => {
+    if (!testStarted) return;
+    
+    const remainingChars = Math.max(0, promptText.length - inputValue.length);
+    
+    if (remainingChars < 500 && !isLoadingRef.current) {
+      console.warn('⚠️ EMERGENCY TEXT LOAD - Only', remainingChars, 'chars left!');
+      loadMoreText().catch(err => {
+        console.error('Emergency load failed:', err);
+        // CRITICAL: Generate local text immediately
+        const emergencyText = generatePrompt(difficulty, 60, '', testMode, language);
+        setPromptText(prev => prev + " " + emergencyText);
+        isLoadingRef.current = false;
+      });
+    }
+  }, [inputValue.length, promptText.length, testStarted, loadMoreText, generatePrompt, difficulty, testMode, language]);
 
   const autoStartedRef = useRef<boolean>(false);
   const lastInputLengthRef = useRef<number>(0);
@@ -622,30 +699,28 @@ export function useTypingTest(): UseTypingTestReturn {
     setMotivation(randomMotivation);
   }, [calculateStats, difficulty, testMode]);
 
-  const startTest = useCallback(async () => {
+  const startTest = useCallback(() => {
     setTestCompleted(false);
     setInputValueState('');
     setCurrentTime(totalTime);
     setResult(null);
     setMotivation(null);
     
-    // Load fresh text when starting
+    // Immediately set test ready for instant UI response
+    console.log('🎯 Test ready - waiting for first keystroke to start timer');
+    setTestReady(true);
+    setTestStarted(false); // Timer not started yet
+    
+    // Load fresh text in background (non-blocking)
     if (difficulty !== 'custom') {
-      try {
-        await loadNewPrompt();
-      } catch {
+      loadNewPrompt().catch(() => {
         const newPrompt = generatePrompt(difficulty, totalTime, customText, testMode, language);
         setPromptText(newPrompt);
-      }
+      });
     } else if (!promptText) {
       const newPrompt = generatePrompt(difficulty, totalTime, customText, testMode, language);
       setPromptText(newPrompt);
     }
-
-    // Set test ready - timer will start on first keystroke
-    console.log('🎯 Test ready - waiting for first keystroke to start timer');
-    setTestReady(true);
-    setTestStarted(false); // Timer not started yet
   }, [totalTime, difficulty, customText, testMode, language, generatePrompt, promptText, loadNewPrompt]);
 
   const resetTest = useCallback(() => {

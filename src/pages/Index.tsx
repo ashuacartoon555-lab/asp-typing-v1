@@ -158,7 +158,7 @@ const Index = () => {
         {!testStarted && !testCompleted && (
           <div className="card-gradient p-3 sm:p-5 md:p-8 rounded-xl sm:rounded-2xl md:rounded-3xl mb-2 sm:mb-3 text-center border border-border shadow-lg">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold gradient-text mb-2">
-              Complete Typing Tutorial & Speed Test
+              Typing Challenge Laboratory 🔬
             </h1>
             <p className="text-muted-foreground text-xs sm:text-sm mb-3">
               Master speed & accuracy with 20+ challenge modes. Practice daily, track progress & unlock achievements.

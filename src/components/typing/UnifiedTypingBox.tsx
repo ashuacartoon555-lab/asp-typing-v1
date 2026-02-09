@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import { useRef, useEffect, useState, useMemo, useCallback, type CSSProperties } from 'react';
 import { RefreshCw, Copy, Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Sanscript from '@indic-transliteration/sanscript';
@@ -27,38 +27,94 @@ const UnifiedTypingBox = ({
   onNewPrompt,
   language = 'english'
 }: UnifiedTypingBoxProps) => {
+  const VISIBLE_LINE_COUNT = 5;
+  const ACTIVE_LINE_INDEX = 2;
   const containerRef = useRef<HTMLDivElement>(null);
+  const textContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(0);
   const isComposingRef = useRef(false);
 
-  // Split text into lines - ALWAYS ensure 3 visible lines minimum
+  useEffect(() => {
+    if (!textContainerRef.current) return;
+
+    const updateWidth = () => {
+      const width = textContainerRef.current?.clientWidth || 0;
+      setContainerWidth(width);
+      console.log('📏 Container width measured:', width, 'px (usable:', width - 40, 'px with safety margin)');
+    };
+
+    updateWidth();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateWidth);
+      return () => window.removeEventListener('resize', updateWidth);
+    }
+
+    const ro = new ResizeObserver(() => updateWidth());
+    ro.observe(textContainerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // Split text into lines - ALWAYS ensure 5 visible lines minimum
   const lines = useMemo(() => {
     if (!promptText || promptText.trim().length === 0) {
-      return ['Start typing to begin the test...', 'Loading your practice text...', 'Please wait...'];
+      return [
+        'Start typing to begin the test...',
+        'Loading your practice text...',
+        'Please wait...',
+        '',
+        ''
+      ];
     }
     
     const words = promptText.split(' ').filter(w => w.trim());
     if (words.length === 0) {
-      return ['No text available.', 'Click "New Prompt" button below.', 'Or select a different mode.'];
+      return ['No text available.', 'Click "New Prompt" button below.', 'Or select a different mode.', '', ''];
     }
     
     const result: string[] = [];
     let currentLine = '';
-    const maxLineLength = 85; // Slightly less than 90 for safety
+    const fallbackCharLimit = 62;
+    const canMeasure = typeof document !== 'undefined' && containerWidth > 0;
+    const canvas = canMeasure ? document.createElement('canvas') : null;
+    const ctx = canvas ? canvas.getContext('2d') : null;
+
+    if (ctx) {
+      ctx.font = "500 21px 'JetBrains Mono', ui-monospace, monospace";
+    }
+
+    // Safety margin to account for letter-spacing (0.4px per char accumulates!)
+    // and browser rendering differences - prevents text cutoff
+    const safetyMargin = 40;
+    const maxLineWidth = Math.max(100, containerWidth - safetyMargin);
+
+    const fitsLine = (text: string) => {
+      if (!ctx || !canMeasure) return text.length <= fallbackCharLimit;
+      // Add extra buffer for letter-spacing: 0.4px * text.length
+      const textWidth = ctx.measureText(text).width;
+      const letterSpacingExtra = text.length * 0.4;
+      return (textWidth + letterSpacingExtra) <= maxLineWidth;
+    };
     
     words.forEach((word, index) => {
       const testLine = currentLine ? `${currentLine} ${word}` : word;
       
-      if (testLine.length <= maxLineLength) {
+      if (fitsLine(testLine)) {
         currentLine = testLine;
       } else {
-        // Line is full, push it and start new line
+        // Line would overflow, push current line first
         if (currentLine) {
           result.push(currentLine);
+          currentLine = word; // Start new line with current word
+        } else {
+          // Edge case: single word too long to fit on line
+          // Still add it (will be clipped but prevents infinite loop)
+          result.push(word);
+          currentLine = '';
         }
-        currentLine = word;
       }
       
       // Push last line
@@ -67,29 +123,29 @@ const UnifiedTypingBox = ({
       }
     });
     
-    // Ensure minimum of 3 lines for proper display
-    if (result.length < 3) {
-      // Not enough lines - need to ensure 3 lines always
+    // Ensure minimum of 5 lines for proper display
+    if (result.length < VISIBLE_LINE_COUNT) {
+      // Not enough lines - need to ensure 5 lines always
       if (result.length === 0) {
-        return ['Start typing...', '', ''];
+        return ['Start typing...', '', '', '', ''];
       } else if (result.length === 1) {
-        // Split the single line into 3 parts
+        // Split the single line into 5 parts when possible
         const text = result[0];
         const splitWords = text.split(' ');
-        if (splitWords.length >= 9) {
-          const third = Math.ceil(splitWords.length / 3);
+        if (splitWords.length >= 15) {
+          const fifth = Math.ceil(splitWords.length / 5);
           return [
-            splitWords.slice(0, third).join(' '),
-            splitWords.slice(third, third * 2).join(' '),
-            splitWords.slice(third * 2).join(' ')
+            splitWords.slice(0, fifth).join(' '),
+            splitWords.slice(fifth, fifth * 2).join(' '),
+            splitWords.slice(fifth * 2, fifth * 3).join(' '),
+            splitWords.slice(fifth * 3, fifth * 4).join(' '),
+            splitWords.slice(fifth * 4).join(' ')
           ];
         } else {
-          return [text, '', ''];
+          return [text, '', '', '', ''];
         }
-      } else if (result.length === 2) {
-        // Have 2 lines, add empty third
-        return [...result, ''];
       }
+      return [...result, ...Array(VISIBLE_LINE_COUNT - result.length).fill('')];
     }
     
     return result;
@@ -97,7 +153,7 @@ const UnifiedTypingBox = ({
 
   // Debug logging
   useEffect(() => {
-    console.log('UnifiedTypingBox - Lines generated:', lines.length, 'First 3:', lines.slice(0, 3).map(l => l.substring(0, 30)));
+    console.log('UnifiedTypingBox - Lines generated:', lines.length, 'First 5:', lines.slice(0, 5).map(l => l.substring(0, 30)));
   }, [lines]);
 
   // Character positions for each line start
@@ -111,15 +167,24 @@ const UnifiedTypingBox = ({
     return positions;
   }, [lines]);
 
+  const lineEndPositions = useMemo(() => {
+    return lines.map((line, i) => {
+      const start = lineCharPositions[i] ?? 0;
+      return start + Math.max(0, line.length - 1);
+    });
+  }, [lines, lineCharPositions]);
+
   // Find current line based on input
   const getCurrentLine = useCallback(() => {
-    for (let i = 0; i < lineCharPositions.length - 1; i++) {
-      if (inputValue.length < lineCharPositions[i + 1]) {
+    if (inputValue.length === 0) return 0;
+
+    for (let i = 0; i < lineEndPositions.length; i++) {
+      if (inputValue.length <= lineEndPositions[i]) {
         return i;
       }
     }
     return Math.max(0, lines.length - 1);
-  }, [inputValue.length, lineCharPositions, lines.length]);
+  }, [inputValue.length, lineEndPositions, lines.length]);
 
   // Update line when typing
   useEffect(() => {
@@ -144,40 +209,32 @@ const UnifiedTypingBox = ({
   // Auto-focus and enable when test becomes ready
   useEffect(() => {
     if (testReady && !testStarted && !testCompleted && inputRef.current) {
-      inputRef.current.focus();
-      // Remove readonly to allow immediate typing
-      inputRef.current.removeAttribute('readonly');
+      // Wait a tiny bit for React to update the DOM
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.removeAttribute('readonly');
+          inputRef.current.focus();
+          console.log('✅ Textarea focused and ready for input');
+        }
+      }, 50);
     }
   }, [testReady, testStarted, testCompleted]);
 
-  // Visible 3 lines - ALWAYS show exactly 3 lines
+  // Visible 5 lines - slice around the active line
   const visibleLines = useMemo(() => {
-    // Start from current line, but ensure we can show 3 lines
-    let startIndex = currentLineIndex;
-    
-    // If near the end, shift back to show full 3 lines
-    if (lines.length >= 3) {
-      // Never go beyond the point where we can't show 3 lines
-      const maxStartIndex = Math.max(0, lines.length - 3);
-      if (startIndex > maxStartIndex) {
-        startIndex = maxStartIndex;
-      }
-    } else {
-      startIndex = 0; // Start from beginning if less than 3 lines
+    const desiredStart = currentLineIndex - ACTIVE_LINE_INDEX;
+    let startIndex = Math.max(0, desiredStart);
+    let endIndex = startIndex + VISIBLE_LINE_COUNT;
+
+    if (endIndex > lines.length) {
+      endIndex = lines.length;
+      startIndex = Math.max(0, endIndex - VISIBLE_LINE_COUNT);
     }
-    
-    // Get 3 lines starting from adjusted index
-    const threeLines = [];
-    for (let i = 0; i < 3; i++) {
-      const lineIndex = startIndex + i;
-      if (lineIndex < lines.length) {
-        threeLines.push(lines[lineIndex]);
-      } else {
-        threeLines.push(''); // Pad with empty if not enough lines
-      }
-    }
-    
-    return { lines: threeLines, startIndex };
+
+    const slice = lines.slice(startIndex, endIndex);
+    while (slice.length < VISIBLE_LINE_COUNT) slice.push('');
+
+    return { lines: slice, startIndex };
   }, [lines, currentLineIndex]);
 
   const visibleStartChar = lineCharPositions[visibleLines.startIndex] || 0;
@@ -213,23 +270,64 @@ const UnifiedTypingBox = ({
     return value;
   }, []);
 
-  // Render line characters
+  const currentWordStart = useMemo(() => {
+    return Math.max(0, inputValue.lastIndexOf(' ') + 1);
+  }, [inputValue]);
+
+  const currentWordEnd = useMemo(() => {
+    const nextSpace = promptText.indexOf(' ', currentWordStart);
+    return nextSpace === -1 ? promptText.length : nextSpace;
+  }, [promptText, currentWordStart]);
+
+  // Render line characters with unique styling
   const renderLine = (line: string, lineStart: number) => {
-    return line.split('').map((char, idx) => {
+    const renderText = line.length > 0 && lineStart + line.length < promptText.length
+      ? `${line} `
+      : line;
+
+    return renderText.split('').map((char, idx) => {
       const absIdx = lineStart + idx;
       const typed = inputValue[absIdx];
       
-      let cls = 'text-gray-500'; // untyped
+      let cls = 'text-gray-400'; // untyped - soft gray
+      let style: CSSProperties = {};
+      
       if (absIdx < inputValue.length) {
-        cls = typed === char ? 'text-white' : 'text-red-400 bg-red-900/50';
+        if (typed === char) {
+          cls = 'text-cyan-300'; // Correct - light cyan
+        } else {
+          cls = 'text-red-300'; // Wrong - muted red
+          // Rounded underline with subtle glow
+          style = {
+            textDecoration: 'underline wavy',
+            textUnderlineOffset: '3px',
+            textDecorationColor: 'rgba(252, 165, 165, 0.6)',
+            textDecorationThickness: '2px',
+            textShadow: '0 0 6px rgba(252, 165, 165, 0.35)'
+          };
+        }
+      } else if (highlightWord && absIdx >= currentWordStart && absIdx < currentWordEnd) {
+        cls = 'text-slate-200';
+        style = {
+          textShadow: '0 0 6px rgba(148, 163, 184, 0.35)'
+        };
       }
       
-      // Cursor indicator
+      // Cursor indicator - soft glowing bar
       const isCursor = absIdx === inputValue.length;
       
       return (
-        <span key={idx} className={`${cls} relative`}>
-          {isCursor && <span className="absolute left-0 top-0 w-0.5 h-full bg-cyan-400 animate-pulse" />}
+        <span key={idx} className={`${cls} relative`} style={style}>
+          {isCursor && (
+            <span 
+              className="absolute left-0 top-0 w-[2px] h-full rounded-full"
+              style={{
+                background: 'radial-gradient(circle, #06b6d4 0%, #06b6d4 40%, transparent 70%)',
+                boxShadow: '0 0 8px rgba(6, 182, 212, 0.8)',
+                animation: 'softGlow 1.5s ease-in-out infinite'
+              }}
+            />
+          )}
           {char}
         </span>
       );
@@ -238,7 +336,7 @@ const UnifiedTypingBox = ({
 
   return (
     <div className="space-y-3">
-      {/* Fixed 3-line typing box */}
+      {/* Fixed 5-line typing box */}
       <div
         ref={containerRef}
         onClick={() => inputRef.current?.focus()}
@@ -246,12 +344,15 @@ const UnifiedTypingBox = ({
           isFocused ? 'ring-2 ring-cyan-500/40' : ''
         }`}
         style={{
-          background: 'hsla(200, 15%, 8%, 0.95)',
-          border: '1px solid hsla(0, 0%, 100%, 0.1)',
-          minHeight: '130px', // Exact fit for 3 lines: 30px * 3 + 2px * 2 (spacing) + 32px (padding)
-          maxHeight: '130px',
-          height: '130px',
-          padding: '16px 20px',
+          background: 'linear-gradient(180deg, hsl(210, 25%, 12%), hsl(210, 22%, 10%))',
+          border: '1px solid hsl(210, 30%, 20%)',
+          minHeight: '320px',
+          maxHeight: '320px',
+          height: '320px',
+          padding: '28px 40px',
+          margin: '0 auto',
+          maxWidth: '1080px',
+          boxShadow: '0 8px 24px hsla(0, 0%, 0%, 0.4), inset 0 1px 0 hsla(0, 0%, 100%, 0.08)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
@@ -260,33 +361,48 @@ const UnifiedTypingBox = ({
         }}
       >
         <div
+          ref={textContainerRef}
           className="select-none"
           style={{
-            fontFamily: "Consolas, Monaco, 'Courier New', monospace",
-            fontSize: '1.05rem',
-            lineHeight: '1.75rem',
-            letterSpacing: '0.02em',
+            fontFamily: "'JetBrains Mono', 'ui-monospace', monospace",
+            fontSize: '21px',
+            fontWeight: 500,
+            lineHeight: '1.9',
+            letterSpacing: '0.4px',
             width: '100%',
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'flex-start'
+            gap: '12px',
+            justifyContent: 'flex-start',
+            WebkitFontSmoothing: 'antialiased',
+            textRendering: 'optimizeLegibility'
           }}
         >
           {visibleLines.lines.map((line, idx) => {
-            const lineStart = visibleStartChar + 
-              visibleLines.lines.slice(0, idx).reduce((a, l) => a + l.length + 1, 0);
+            const lineIndex = visibleLines.startIndex + idx;
+            const lineStart = lineCharPositions[lineIndex] ?? visibleStartChar;
+            const lineOpacity = idx === ACTIVE_LINE_INDEX ? 1 : idx < ACTIVE_LINE_INDEX ? 0.6 : 0.7;
             
             // Always render the line container, even if empty
             return (
               <div 
                 key={currentLineIndex + idx} 
-                className="whitespace-pre-wrap break-words" 
+                className="whitespace-pre"
                 style={{ 
-                  minHeight: '30px',
-                  height: '30px', 
-                  lineHeight: '30px',
-                  marginBottom: idx < 2 ? '2px' : '0' // Space between lines
+                  minHeight: '42px',
+                  height: '42px',
+                  lineHeight: '42px',
+                  overflow: 'hidden',
+                  textOverflow: 'clip',
+                  width: '100%',
+                  maxWidth: '100%',
+                  opacity: lineOpacity,
+                  transition: 'opacity 320ms ease-out, transform 320ms ease-out',
+                  transform: 'translateY(0)',
+                  willChange: 'opacity, transform',
+                  wordBreak: 'keep-all',
+                  whiteSpace: 'pre'
                 }}
               >
                 {line ? renderLine(line, lineStart) : <span className="text-gray-700">&nbsp;</span>}
@@ -301,13 +417,15 @@ const UnifiedTypingBox = ({
           onChange={(e) => onInputChange(e.target.value)}
           onFocus={(e) => {
             setIsFocused(true);
-            e.target.removeAttribute('readonly');
+            if (testReady || testStarted) {
+              e.target.removeAttribute('readonly');
+            }
           }}
           onBlur={() => setIsFocused(false)}
           disabled={testCompleted}
-          readOnly
+          readOnly={!testReady && !testStarted}
           onKeyDown={(e) => {
-            if (e.currentTarget.hasAttribute('readonly')) {
+            if (e.currentTarget.hasAttribute('readonly') && (testReady || testStarted)) {
               e.currentTarget.removeAttribute('readonly');
             }
             // Prevent newlines

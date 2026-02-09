@@ -15,7 +15,7 @@ const ActionButtons = ({ testStarted, testReady, testCompleted, onStart, onReset
       {!testStarted && !testReady && !testCompleted && (
         <button 
           onClick={onStart}
-          className="flex items-center justify-center gap-3 px-8 py-4 text-black rounded-full font-semibold text-lg min-w-[200px] hover:-translate-y-1 transition-all"
+          className="flex items-center justify-center gap-3 px-8 py-4 text-black rounded-full font-semibold text-lg min-w-[200px] hover:-translate-y-1 hover:scale-105 active:scale-95 transition-all duration-200"
           style={{
             background: 'linear-gradient(135deg, hsl(178, 72%, 45%), hsl(42, 98%, 58%))',
             boxShadow: '0 6px 25px hsla(178, 72%, 45%, 0.4)'
@@ -26,11 +26,13 @@ const ActionButtons = ({ testStarted, testReady, testCompleted, onStart, onReset
       )}
       
       {!testStarted && testReady && !testCompleted && (
-        <div className="px-8 py-4 rounded-full font-semibold text-lg min-w-[200px] text-center animate-pulse"
+        <div 
+          className="px-8 py-4 rounded-full font-semibold text-lg min-w-[200px] text-center animate-pulse"
           style={{
             background: 'linear-gradient(135deg, hsl(142, 76%, 36%), hsl(158, 64%, 52%))',
             boxShadow: '0 6px 25px hsla(142, 76%, 36%, 0.5)',
-            color: 'white'
+            color: 'white',
+            animation: 'slideIn 0.3s ease-out, pulse 2s ease-in-out infinite'
           }}
         >
           ⌨️ Ready - Start Typing!

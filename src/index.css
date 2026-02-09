@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
 @tailwind base;
@@ -478,6 +478,42 @@ input:-webkit-autofill:active {
 
   .animate-shimmer {
     animation: shimmer 3s ease-in-out infinite;
+  }
+
+  /* Soft glowing cursor animation */
+  @keyframes softGlow {
+    0%, 100% {
+      opacity: 1;
+      box-shadow: 0 0 8px rgba(6, 182, 212, 0.8), 0 0 16px rgba(6, 182, 212, 0.4);
+    }
+    50% {
+      opacity: 0.6;
+      box-shadow: 0 0 6px rgba(6, 182, 212, 0.6), 0 0 12px rgba(6, 182, 212, 0.3);
+    }
+  }
+
+  /* Smooth line movement when active line changes */
+  @keyframes lineSlide {
+    0% {
+      transform: translateY(8px);
+      opacity: 0.85;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Smooth slide in animation for ready state */
+  @keyframes slideIn {
+    0% {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 
   /* Hide scrollbar but keep functionality */
