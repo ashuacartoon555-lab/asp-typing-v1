@@ -19,7 +19,7 @@ const Analytics: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex flex-col">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
         {/* Page Header with Stats Overview */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -112,17 +112,17 @@ const Analytics: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-12">
             {/* Personal Best Cards */}
             <section>
-              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+              <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-2">
                 <span>⚡</span> Quick Stats
               </h2>
               <PersonalBestCard />
               
               {/* Improvement % Line */}
               {history.length >= 2 && (
-                <div className="mt-4 bg-gradient-to-r from-blue-900/50 via-purple-900/50 to-pink-900/50 rounded-lg p-5 border border-blue-600 shadow-lg">
+                <div className="mt-6 bg-gradient-to-r from-blue-900/50 via-purple-900/50 to-pink-900/50 rounded-lg p-8 border border-blue-600 shadow-lg">
                   <p className="text-lg text-center">
                     <span className="text-blue-200 font-semibold">📈 Your WPM improved by </span>
                     <span className={`text-3xl font-extrabold ${improvementPercent > 0 ? 'text-green-400' : improvementPercent < 0 ? 'text-red-400' : 'text-yellow-400'}`}>
@@ -137,7 +137,7 @@ const Analytics: React.FC = () => {
 
             {/* Speed Insights */}
             <section>
-              <h2 className="text-2xl font-bold text-white mb-4">📈 Smart Insights</h2>
+              <h2 className="text-3xl font-bold text-white mb-6">📈 Smart Insights</h2>
               <SpeedInsightDashboard />
             </section>
 
@@ -147,7 +147,7 @@ const Analytics: React.FC = () => {
             </section>
 
             {/* Achievements & Streak */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <section>
                 <AchievementBadges />
               </section>
@@ -158,15 +158,15 @@ const Analytics: React.FC = () => {
 
             {/* Recent Activity Timeline */}
             {history.length > 0 && (
-              <section className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-6 border border-slate-700">
-                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+              <section className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-8 border border-slate-700">
+                <h2 className="text-3xl font-bold text-white mb-8 flex items-center gap-2">
                   <span>📅</span> Recent Activity
                 </h2>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {history.slice(-5).reverse().map((test, idx) => (
                     <div 
                       key={idx}
-                      className="bg-slate-700/50 rounded-lg p-4 border border-slate-600 hover:border-slate-500 transition-all"
+                      className="bg-slate-700/50 rounded-lg p-6 border border-slate-600 hover:border-slate-500 transition-all"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">

@@ -43,11 +43,11 @@ const Footer = () => {
       }}
       role="contentinfo"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {/* Brand Section */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-3 group">
+            <Link to="/" className="flex items-center gap-2 mb-2 group">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold text-base transition-transform group-hover:scale-110">
                 Tt
               </div>
@@ -68,8 +68,8 @@ const Footer = () => {
 
           {/* Features Section */}
           <div>
-            <h4 className="font-semibold mb-3 text-base">Features</h4>
-            <ul className="space-y-1.5">
+            <h4 className="font-semibold mb-2 text-base">Features</h4>
+            <ul className="space-y-1">
               {features.map((feature, index) => (
                 <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
@@ -81,8 +81,8 @@ const Footer = () => {
 
           {/* Quick Links Section */}
           <div>
-            <h4 className="font-semibold mb-3 text-base">Quick Links</h4>
-            <ul className="space-y-1.5">
+            <h4 className="font-semibold mb-2 text-base">Quick Links</h4>
+            <ul className="space-y-1">
               {quickLinks.map((link, index) => (
                 <li key={index}>
                   <Link 
@@ -99,8 +99,8 @@ const Footer = () => {
 
           {/* Contact Section */}
           <div>
-            <h4 className="font-semibold mb-3 text-base">Contact</h4>
-            <ul className="space-y-3">
+            <h4 className="font-semibold mb-2 text-base">Contact</h4>
+            <ul className="space-y-2">
               <li>
                 <a 
                   href="mailto:support@onlinetypingtest.in"
@@ -128,7 +128,7 @@ const Footer = () => {
 
       {/* Bottom Bar */}
       <div className="border-t" style={{ borderColor: 'hsla(0, 0%, 100%, 0.2)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-3">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
             <p className="text-xs sm:text-sm text-muted-foreground">
               © {new Date().getFullYear()} OnlineTypingTest.in | Free Typing Practice Platform

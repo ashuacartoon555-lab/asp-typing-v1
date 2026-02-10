@@ -1,6 +1,6 @@
 import Header from '@/components/typing/Header';
 import Footer from '@/components/typing/Footer';
-import { Info, Target, Smartphone, RefreshCw, Users, Mail, Award, Heart, CheckCircle, Zap, Shield, Globe, Clock, BookOpen, Gamepad2, GraduationCap, TrendingUp, Star, MessageSquare, Lightbulb, HandHeart, Rocket, Eye, Lock, Sparkles } from 'lucide-react';
+import { Info, Target, Smartphone, RefreshCw, Users, Mail, Award, Heart, CheckCircle, Zap, Shield, Globe, Clock, BookOpen, Gamepad2, GraduationCap, TrendingUp, Star, MessageSquare, Lightbulb, HandHeart, Rocket, Eye, Lock, Sparkles, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -16,9 +16,10 @@ const About = () => {
     { icon: Target, title: 'Precision WPM Calculation', description: 'Industry-standard algorithms that match official government exam evaluation criteria for accurate speed measurement.' },
     { icon: Shield, title: 'Privacy Focused', description: 'Your typing data stays on your device. We do not track personal information or require account creation to practice.' },
     { icon: Smartphone, title: 'Mobile Responsive', description: 'Practice on any device including smartphones, tablets, laptops, and desktops with our fully responsive design.' },
-    { icon: Globe, title: 'Multi-Language Support', description: 'Practice typing in English and Hindi with support for Mangal and Kruti Dev fonts used in government exams.' },
+    { icon: Globe, title: 'Multi-Language Support', description: 'Practice typing in English and Hinglish with support for Mangal and Kruti Dev fonts used in government exams.' },
     { icon: Clock, title: 'Flexible Duration', description: 'Choose from multiple test durations including 1, 2, 5, 10, and 15-minute tests to match exam requirements.' },
     { icon: Gamepad2, title: 'Engaging Games', description: 'Make practice fun with typing games that improve skills while keeping you motivated and entertained.' },
+    { icon: BarChart2, title: 'Your Typing Analytics', description: 'Track detailed performance metrics including WPM, accuracy, error patterns, and progress trends to guide your practice.' },
   ];
 
   const teamValues = [
@@ -245,7 +246,7 @@ const About = () => {
             </p>
             
             <p>
-              The platform is accessible from any device - desktop, laptop, tablet, or smartphone. Our efficient, lightweight design ensures smooth performance even on basic devices with slower internet connections. No downloads, no installations, and no account creation required.
+              OnlineTypingTest.in is designed to work smoothly on all devices, including mobile phones, tablets, laptops, and desktop computers. The interface automatically adjusts according to screen size so that all options, features, and functions remain easy to use on any device.
             </p>
             
             <p>

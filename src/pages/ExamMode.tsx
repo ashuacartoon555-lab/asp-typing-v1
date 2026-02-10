@@ -12,7 +12,7 @@ const exams: { id: ExamType; title: string; description: string; duration: strin
     title: "SSC CGL",
     description: "Staff Selection Commission - Combined Graduate Level typing test pattern",
     duration: "15 minutes",
-    words: "35 WPM Required",
+    words: "35 WPM (typical)",
     icon: FileText
   },
   {
@@ -20,7 +20,7 @@ const exams: { id: ExamType; title: string; description: string; duration: strin
     title: "SSC CHSL",
     description: "Combined Higher Secondary Level - Data Entry Operator typing test",
     duration: "15 minutes",
-    words: "35 WPM Required",
+    words: "35 WPM (typical)",
     icon: FileText
   },
   {
@@ -28,7 +28,7 @@ const exams: { id: ExamType; title: string; description: string; duration: strin
     title: "IBPS Clerk",
     description: "Institute of Banking Personnel Selection - Clerk typing test",
     duration: "10 minutes",
-    words: "30 WPM Required",
+    words: "30 WPM (typical)",
     icon: Building
   },
   {
@@ -36,7 +36,7 @@ const exams: { id: ExamType; title: string; description: string; duration: strin
     title: "RRB NTPC",
     description: "Railway Recruitment Board - Non Technical Popular Categories",
     duration: "10 minutes",
-    words: "30 WPM Required",
+    words: "30 WPM (typical)",
     icon: Users
   },
   {
@@ -44,7 +44,7 @@ const exams: { id: ExamType; title: string; description: string; duration: strin
     title: "High Court",
     description: "High Court Stenographer and Typist exam pattern",
     duration: "10 minutes",
-    words: "35 WPM Required",
+    words: "35 WPM (typical)",
     icon: Award
   },
   {
@@ -52,7 +52,7 @@ const exams: { id: ExamType; title: string; description: string; duration: strin
     title: "CPCT",
     description: "Computer Proficiency Certification Test - MP Online",
     duration: "15 minutes",
-    words: "30 WPM Required",
+    words: "30 WPM (typical)",
     icon: GraduationCap
   }
 ];
@@ -86,7 +86,7 @@ const ExamMode = () => {
             Exam Mode
           </h1>
           <p className="text-muted-foreground text-lg">
-            Practice with real government exam patterns - SSC, Banking, Railways & more
+            Practice with exam-style patterns inspired by SSC, Banking, Railways & more
           </p>
         </div>
 
@@ -99,12 +99,12 @@ const ExamMode = () => {
             <div className="w-px h-12 bg-border hidden md:block" />
             <div>
               <div className="text-3xl font-bold text-primary">100%</div>
-              <div className="text-sm text-muted-foreground">Accurate Patterns</div>
+              <div className="text-sm text-muted-foreground">Exam-Style Patterns</div>
             </div>
             <div className="w-px h-12 bg-border hidden md:block" />
             <div>
               <div className="text-3xl font-bold text-primary">Practice</div>
-              <div className="text-sm text-muted-foreground">Certificate Available</div>
+              <div className="text-sm text-muted-foreground">Practice Summary</div>
             </div>
             <div className="w-px h-12 bg-border hidden md:block" />
             <div>
@@ -145,9 +145,9 @@ const ExamMode = () => {
           <div className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 p-4 rounded-lg border border-orange-500/20">
             <div className="flex items-center gap-2 mb-2">
               <Shield className="w-5 h-5 text-orange-500" />
-              <span className="font-semibold text-sm">Full Privacy</span>
+              <span className="font-semibold text-sm">Privacy Focused</span>
             </div>
-            <p className="text-xs text-muted-foreground">100% local - No data collection</p>
+            <p className="text-xs text-muted-foreground">Local-first practice with optional saved progress</p>
           </div>
         </div>
 
