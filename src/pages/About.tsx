@@ -8,7 +8,7 @@ const About = () => {
   const stats = [
     { label: 'Test Modes', value: '15+', icon: Gamepad2, description: 'Different typing games and practice modes' },
     { label: 'Difficulty Levels', value: '4+', icon: TrendingUp, description: 'From beginner to advanced practice' },
-    { label: 'Languages', value: '2', icon: Globe, description: 'English and Hindi typing support' },
+    { label: 'Languages', value: '2', icon: Globe, description: 'English and Hinglish typing support' },
     { label: 'Always Free', value: '100%', icon: Heart, description: 'No premium features or hidden costs' },
   ];
 
@@ -67,15 +67,15 @@ const About = () => {
           
           <div className="space-y-6 text-muted-foreground leading-relaxed">
             <p className="text-lg">
-              OnlineTypingTest.in was born from a simple observation: thousands of Indian students preparing for government examinations struggle to find quality, free typing practice resources. Many existing platforms either required expensive subscriptions, were cluttered with intrusive advertisements, or simply did not match the actual exam environment and requirements.
+              OnlineTypingTest.in was created to provide free typing practice resources for students preparing for government exams. We offer practice tools designed to simulate standard typing test formats without requiring payment or account creation.
             </p>
             
             <p>
-              Our founding team consisted of individuals who had personally experienced the challenges of government exam preparation. We understood the pressure of typing tests for SSC, IBPS, CPCT, and various state-level examinations. We knew that a typing speed difference of just 5 words per minute could mean the difference between selection and rejection for a government position.
+              Our team consists of developers who understand government exam typing requirements. We created this platform based on standard formats used in SSC, IBPS, CPCT, and state-level exams. Consistent typing practice can help improve your typing speed and accuracy.
             </p>
             
             <p>
-              This understanding drove us to create a platform that would be completely free, with no hidden costs or premium tiers. We wanted every student in India, from metropolitan cities to remote villages, to have access to the same high-quality practice tools that would genuinely prepare them for success.
+              Our goal is to provide free typing practice without hidden costs or premium tiers. We believe accessible practice tools can help students develop typing skills regardless of location or economic background.
             </p>
             
             <p>
@@ -83,7 +83,7 @@ const About = () => {
             </p>
             
             <p>
-              Our commitment remains unchanged: to provide a high-quality, free typing practice platform that genuinely helps users improve. Whether you are preparing for a government exam, looking to improve productivity at work, or simply wanting to type faster, OnlineTypingTest.in is here to support your journey.
+              We aim to provide a free typing practice platform that helps users develop typing skills. Whether you're preparing for a government exam, looking to improve work productivity, or practicing typing, OnlineTypingTest.in offers multiple practice modes and difficulty levels.
             </p>
           </div>
         </div>
@@ -97,7 +97,7 @@ const About = () => {
           
           <div className="space-y-6 text-muted-foreground leading-relaxed">
             <p className="text-lg font-medium text-foreground">
-              To democratize typing skill development by providing world-class practice tools completely free of charge, ensuring every Indian student and professional has equal opportunity to develop essential keyboard skills.
+              To provide free, accessible typing practice tools that help students and professionals develop keyboard skills through realistic practice environments designed for government exam simulation.
             </p>
             
             <div className="grid md:grid-cols-2 gap-6 mt-8">
@@ -107,7 +107,7 @@ const About = () => {
                   Our Vision
                 </h3>
                 <p className="text-sm">
-                  To provide reliable, accurate typing practice tools that help students prepare for government typing exams. We aim to ensure no candidate fails a typing test due to lack of quality practice resources, regardless of their economic background.
+                  To provide reliable typing practice tools designed to match government exam formats. Our platform is freely accessible to help students practice typing without requiring payment or account creation.
                 </p>
               </div>
               
@@ -117,7 +117,7 @@ const About = () => {
                   Our Promise
                 </h3>
                 <p className="text-sm">
-                  We commit to keeping our core typing practice tools free forever. We will never compromise user experience with intrusive advertising. We will never sell user data or require unnecessary personal information. Quality will always remain our top priority.
+                  We aim to keep our typing practice tools free and accessible. We do not require personal information or account creation to use basic practice features. For details on privacy and data usage, please see our Privacy Policy.
                 </p>
               </div>
             </div>
@@ -133,7 +133,7 @@ const About = () => {
           
           <div className="space-y-6 text-muted-foreground leading-relaxed mb-8">
             <p>
-              The internet offers numerous typing practice websites, but OnlineTypingTest.in stands apart through our unwavering commitment to quality, user experience, and genuine helpfulness. Here is what distinguishes us from alternatives:
+              OnlineTypingTest.in offers typing practice features designed for government exam simulation. Here's what we provide:
             </p>
           </div>
 
@@ -163,8 +163,8 @@ const About = () => {
                 <TrendingUp className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-semibold text-foreground mb-1">Accurate Calculations</h4>
-                <p className="text-sm text-muted-foreground">Our WPM and accuracy calculations use the same formulas as official government exam systems. This means your practice scores accurately predict your performance in actual typing tests, giving you reliable feedback for improvement.</p>
+                <h4 className="font-semibold text-foreground mb-1">Standard Calculations</h4>
+                <p className="text-sm text-muted-foreground">Our WPM and accuracy calculations follow standard typing test methods. Practice scores provide feedback on typing performance and help track improvement with consistent practice.</p>
               </div>
             </div>
             
@@ -241,7 +241,7 @@ const About = () => {
           
           <div className="space-y-6 text-muted-foreground leading-relaxed">
             <p>
-              OnlineTypingTest.in is designed to provide a realistic typing practice experience that closely mimics actual government exam conditions. Our platform features accurate WPM calculations, real-time error tracking, and a variety of practice modes to suit different skill levels and exam requirements.
+              OnlineTypingTest.in provides typing practice tools designed to simulate government exam format requirements. Our platform includes WPM measurement, error tracking, and multiple practice modes for different skill levels.
             </p>
             
             <p>
@@ -249,7 +249,7 @@ const About = () => {
             </p>
             
             <p>
-              We offer multiple practice modes including timed tests (1, 2, 5, 10, 15 minutes), 15 typing games for engaging practice, exam-specific modes, Hindi typing with Mangal and Kruti Dev fonts, and detailed analytics to track your progress. All features are completely free with no premium tiers or hidden costs.
+              We offer multiple practice modes including timed tests (1, 2, 5, 10, 15 minutes), typing games, exam-specific modes, Hindi typing with Mangal and Kruti Dev fonts, and progress tracking. All features are free without premium tiers or hidden costs.
             </p>
             
             <div className="bg-primary/10 rounded-xl p-6 border border-primary/20 mt-8">
@@ -273,7 +273,7 @@ const About = () => {
           
           <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 border border-slate-700 mb-8">
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-              OnlineTypingTest.in is built by developers and typing enthusiasts who share a common vision: to create a free, accessible typing practice platform for exam preparation. We focus on accurate calculations, realistic practice environments, and user-friendly design.
+              OnlineTypingTest.in was built by developers who created this platform to provide free, accessible typing practice. We aim to offer straightforward practice tools and helpful features for typing skill development.
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
