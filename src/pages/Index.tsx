@@ -61,6 +61,9 @@ const Index = () => {
   // Toast notification state
   const [toast, setToast] = React.useState<{message: string; type: 'error' | 'success' | 'warning'} | null>(null);
 
+  // Simulated active users count for post-test remark banner
+  const [activeUsersCount, setActiveUsersCount] = React.useState<number | null>(null);
+
   // Challenge mode hook integration
   const challengeMode = useChallengeMode({
     settings: challengeSettings,
@@ -125,6 +128,16 @@ const Index = () => {
       }
     }
   }, [testCompleted, result, challengeSettings, playSound, showChallengeToast]);
+
+  useEffect(() => {
+    if (testCompleted) {
+      const base = 120;
+      const range = 60;
+      setActiveUsersCount(base + Math.floor(Math.random() * (range + 1)));
+    } else {
+      setActiveUsersCount(null);
+    }
+  }, [testCompleted]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.ctrlKey && e.key === 'Enter') {
@@ -679,6 +692,11 @@ const Index = () => {
                        "You're improving with every test. Keep practicing!"}
                     </span>
                   </div>
+                  {activeUsersCount !== null && (
+                    <div className="text-cyan-400 font-semibold">
+                      {activeUsersCount} users typing now
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

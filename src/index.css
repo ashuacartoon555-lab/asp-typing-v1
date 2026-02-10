@@ -29,18 +29,18 @@ input:-webkit-autofill:active {
 
 @layer base {
   :root {
-    /* Main gradient background colors */
-    --bg1: 200 60% 10%;
-    --bg2: 195 35% 20%;
-    --bg3: 195 40% 28%;
+    /* Main gradient background colors - Warm tone palette */
+    --bg1: 210 25% 12%;  /* Dark blue-gray base */
+    --bg2: 210 20% 18%;  /* Slightly lighter */
+    --bg3: 210 22% 22%;  /* Warmer tone */
     
-    /* Primary: Teal/Cyan */
-    --primary: 178 72% 45%;
-    --primary-dark: 178 72% 35%;
+    /* Primary: Warm Teal (softer, more sophisticated) */
+    --primary: 180 60% 40%;  /* Soft cyan/teal */
+    --primary-dark: 180 60% 30%;
     --primary-foreground: 0 0% 100%;
     
-    /* Secondary: Orange/Yellow */
-    --secondary: 42 98% 58%;
+    /* Secondary: Warm Orange/Amber accent */
+    --secondary: 35 85% 55%;  /* Soft warm orange */
     --secondary-foreground: 0 0% 10%;
     
     /* Glass effect colors */
@@ -489,18 +489,6 @@ input:-webkit-autofill:active {
     50% {
       opacity: 0.6;
       box-shadow: 0 0 6px rgba(6, 182, 212, 0.6), 0 0 12px rgba(6, 182, 212, 0.3);
-    }
-  }
-
-  /* Smooth line movement when active line changes */
-  @keyframes lineSlide {
-    0% {
-      transform: translateY(8px);
-      opacity: 0.85;
-    }
-    100% {
-      transform: translateY(0);
-      opacity: 1;
     }
   }
 

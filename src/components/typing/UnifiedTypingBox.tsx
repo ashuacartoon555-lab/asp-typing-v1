@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo, useCallback, type CSSProperties } from 'react';
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { RefreshCw, Copy, Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Sanscript from '@indic-transliteration/sanscript';
@@ -27,38 +27,37 @@ const UnifiedTypingBox = ({
   onNewPrompt,
   language = 'english'
 }: UnifiedTypingBoxProps) => {
-  const VISIBLE_LINE_COUNT = 5;
-  const ACTIVE_LINE_INDEX = 2;
   const containerRef = useRef<HTMLDivElement>(null);
-  const textContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [maxLineLength, setMaxLineLength] = useState(85);
   const isComposingRef = useRef(false);
+  const minVisibleLines = 6;
+  const lineHeightPx = 36.75;
+  const lineGapPx = 10;
+  const verticalPaddingPx = 48;
+  const boxHeightPx = Math.round(lineHeightPx * minVisibleLines + lineGapPx * (minVisibleLines - 1) + verticalPaddingPx);
 
   useEffect(() => {
-    if (!textContainerRef.current) return;
+    if (!containerRef.current) return;
 
-    const updateWidth = () => {
-      const width = textContainerRef.current?.clientWidth || 0;
-      setContainerWidth(width);
-      console.log('📏 Container width measured:', width, 'px (usable:', width - 40, 'px with safety margin)');
+    const updateMaxLineLength = () => {
+      const width = containerRef.current?.getBoundingClientRect().width ?? 0;
+      const usableWidth = Math.max(0, width - 90); // More conservative padding allowance
+      const estimatedCharWidth = 13.2; // Slightly larger to be safe
+      const nextMax = Math.max(20, Math.floor(usableWidth / estimatedCharWidth));
+      setMaxLineLength(nextMax);
     };
 
-    updateWidth();
+    updateMaxLineLength();
+    const observer = new ResizeObserver(updateMaxLineLength);
+    observer.observe(containerRef.current);
 
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', updateWidth);
-      return () => window.removeEventListener('resize', updateWidth);
-    }
-
-    const ro = new ResizeObserver(() => updateWidth());
-    ro.observe(textContainerRef.current);
-    return () => ro.disconnect();
+    return () => observer.disconnect();
   }, []);
 
-  // Split text into lines - ALWAYS ensure 5 visible lines minimum
+  // Split text into lines - ALWAYS ensure 6 visible lines minimum
   const lines = useMemo(() => {
     if (!promptText || promptText.trim().length === 0) {
       return [
@@ -66,54 +65,69 @@ const UnifiedTypingBox = ({
         'Loading your practice text...',
         'Please wait...',
         '',
+        '',
         ''
       ];
     }
-    
-    const words = promptText.split(' ').filter(w => w.trim());
+
+    const normalizedText = promptText.replace(/\s+/g, ' ').trim();
+    if (normalizedText.length === 0) {
+      return [
+        'Start typing to begin the test...',
+        'Loading your practice text...',
+        'Please wait...',
+        '',
+        '',
+        ''
+      ];
+    }
+
+    const words = normalizedText.split(' ').filter(w => w.trim());
     if (words.length === 0) {
-      return ['No text available.', 'Click "New Prompt" button below.', 'Or select a different mode.', '', ''];
+      return ['No text available.', 'Click "New Prompt" button below.', 'Or select a different mode.', '', '', ''];
     }
     
     const result: string[] = [];
     let currentLine = '';
-    const fallbackCharLimit = 62;
-    const canMeasure = typeof document !== 'undefined' && containerWidth > 0;
-    const canvas = canMeasure ? document.createElement('canvas') : null;
-    const ctx = canvas ? canvas.getContext('2d') : null;
-
-    if (ctx) {
-      ctx.font = "500 21px 'JetBrains Mono', ui-monospace, monospace";
-    }
-
-    // Safety margin to account for letter-spacing (0.4px per char accumulates!)
-    // and browser rendering differences - prevents text cutoff
-    const safetyMargin = 40;
-    const maxLineWidth = Math.max(100, containerWidth - safetyMargin);
-
-    const fitsLine = (text: string) => {
-      if (!ctx || !canMeasure) return text.length <= fallbackCharLimit;
-      // Add extra buffer for letter-spacing: 0.4px * text.length
-      const textWidth = ctx.measureText(text).width;
-      const letterSpacingExtra = text.length * 0.4;
-      return (textWidth + letterSpacingExtra) <= maxLineWidth;
-    };
+    const maxLineLengthLocal = maxLineLength;
     
     words.forEach((word, index) => {
-      const testLine = currentLine ? `${currentLine} ${word}` : word;
-      
-      if (fitsLine(testLine)) {
-        currentLine = testLine;
-      } else {
-        // Line would overflow, push current line first
+      // If word itself is longer than maxLineLength, break it into chunks
+      if (word.length > maxLineLengthLocal) {
+        // First, push current line if exists
         if (currentLine) {
           result.push(currentLine);
-          currentLine = word; // Start new line with current word
-        } else {
-          // Edge case: single word too long to fit on line
-          // Still add it (will be clipped but prevents infinite loop)
-          result.push(word);
           currentLine = '';
+        }
+        
+        // Break long word into chunks (use slightly smaller chunks for safety)
+        let remainingWord = word;
+        const safeChunkSize = Math.max(20, maxLineLengthLocal - 2); // 2 char safety margin
+        while (remainingWord.length > safeChunkSize) {
+          result.push(remainingWord.substring(0, safeChunkSize));
+          remainingWord = remainingWord.substring(safeChunkSize);
+        }
+        
+        // Set remaining part as current line
+        if (remainingWord) {
+          currentLine = remainingWord;
+        }
+      } else {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        
+        if (testLine.length <= maxLineLengthLocal) {
+          currentLine = testLine;
+        } else {
+          // Line would overflow, push current line first
+          if (currentLine) {
+            result.push(currentLine);
+            currentLine = word; // Start new line with current word
+          } else {
+            // Edge case: single word too long to fit on line
+            // This shouldn't happen now due to chunk breaking above
+            result.push(word);
+            currentLine = '';
+          }
         }
       }
       
@@ -123,38 +137,42 @@ const UnifiedTypingBox = ({
       }
     });
     
-    // Ensure minimum of 5 lines for proper display
-    if (result.length < VISIBLE_LINE_COUNT) {
-      // Not enough lines - need to ensure 5 lines always
+    // Ensure minimum of 6 lines for proper display
+    if (result.length < minVisibleLines) {
+      // Not enough lines - need to ensure 6 lines always
       if (result.length === 0) {
-        return ['Start typing...', '', '', '', ''];
+        return ['Start typing...', '', '', '', '', ''];
       } else if (result.length === 1) {
-        // Split the single line into 5 parts when possible
+        // Split the single line into 6 parts when possible
         const text = result[0];
         const splitWords = text.split(' ');
-        if (splitWords.length >= 15) {
-          const fifth = Math.ceil(splitWords.length / 5);
+        if (splitWords.length >= 18) {
+          const sixth = Math.ceil(splitWords.length / 6);
           return [
-            splitWords.slice(0, fifth).join(' '),
-            splitWords.slice(fifth, fifth * 2).join(' '),
-            splitWords.slice(fifth * 2, fifth * 3).join(' '),
-            splitWords.slice(fifth * 3, fifth * 4).join(' '),
-            splitWords.slice(fifth * 4).join(' ')
+            splitWords.slice(0, sixth).join(' '),
+            splitWords.slice(sixth, sixth * 2).join(' '),
+            splitWords.slice(sixth * 2, sixth * 3).join(' '),
+            splitWords.slice(sixth * 3, sixth * 4).join(' '),
+            splitWords.slice(sixth * 4, sixth * 5).join(' '),
+            splitWords.slice(sixth * 5).join(' ')
           ];
         } else {
-          return [text, '', '', '', ''];
+          return [text, '', '', '', '', '', ''];
         }
+      } else {
+        // Pad remaining lines up to 6
+        return [...result, ...Array.from({ length: minVisibleLines - result.length }, () => '')];
       }
-      return [...result, ...Array(VISIBLE_LINE_COUNT - result.length).fill('')];
     }
     
     return result;
-  }, [promptText]);
+  }, [promptText, maxLineLength]);
 
   // Debug logging
   useEffect(() => {
-    console.log('UnifiedTypingBox - Lines generated:', lines.length, 'First 5:', lines.slice(0, 5).map(l => l.substring(0, 30)));
-  }, [lines]);
+    console.log('UnifiedTypingBox - Lines generated:', lines.length, 'MaxLineLength:', maxLineLength);
+    console.log('First 6 lines (char counts):', lines.slice(0, 6).map((l, i) => `${i}: ${l.length}ch`));
+  }, [lines, maxLineLength]);
 
   // Character positions for each line start
   const lineCharPositions = useMemo(() => {
@@ -167,24 +185,15 @@ const UnifiedTypingBox = ({
     return positions;
   }, [lines]);
 
-  const lineEndPositions = useMemo(() => {
-    return lines.map((line, i) => {
-      const start = lineCharPositions[i] ?? 0;
-      return start + Math.max(0, line.length - 1);
-    });
-  }, [lines, lineCharPositions]);
-
   // Find current line based on input
   const getCurrentLine = useCallback(() => {
-    if (inputValue.length === 0) return 0;
-
-    for (let i = 0; i < lineEndPositions.length; i++) {
-      if (inputValue.length <= lineEndPositions[i]) {
+    for (let i = 0; i < lineCharPositions.length - 1; i++) {
+      if (inputValue.length < lineCharPositions[i + 1]) {
         return i;
       }
     }
     return Math.max(0, lines.length - 1);
-  }, [inputValue.length, lineEndPositions, lines.length]);
+  }, [inputValue.length, lineCharPositions, lines.length]);
 
   // Update line when typing
   useEffect(() => {
@@ -220,22 +229,35 @@ const UnifiedTypingBox = ({
     }
   }, [testReady, testStarted, testCompleted]);
 
-  // Visible 5 lines - slice around the active line
+  // Visible 6 lines - ALWAYS show exactly 6 lines
   const visibleLines = useMemo(() => {
-    const desiredStart = currentLineIndex - ACTIVE_LINE_INDEX;
-    let startIndex = Math.max(0, desiredStart);
-    let endIndex = startIndex + VISIBLE_LINE_COUNT;
-
-    if (endIndex > lines.length) {
-      endIndex = lines.length;
-      startIndex = Math.max(0, endIndex - VISIBLE_LINE_COUNT);
+    // Start from current line, but ensure we can show 6 lines
+    let startIndex = currentLineIndex;
+    
+    // If near the end, shift back to show full 6 lines
+    if (lines.length >= minVisibleLines) {
+      // Never go beyond the point where we can't show 6 lines
+      const maxStartIndex = Math.max(0, lines.length - minVisibleLines);
+      if (startIndex > maxStartIndex) {
+        startIndex = maxStartIndex;
+      }
+    } else {
+      startIndex = 0; // Start from beginning if less than 6 lines
     }
-
-    const slice = lines.slice(startIndex, endIndex);
-    while (slice.length < VISIBLE_LINE_COUNT) slice.push('');
-
-    return { lines: slice, startIndex };
-  }, [lines, currentLineIndex]);
+    
+    // Get 6 lines starting from adjusted index
+    const sixLines = [];
+    for (let i = 0; i < minVisibleLines; i++) {
+      const lineIndex = startIndex + i;
+      if (lineIndex < lines.length) {
+        sixLines.push(lines[lineIndex]);
+      } else {
+        sixLines.push(''); // Pad with empty if not enough lines
+      }
+    }
+    
+    return { lines: sixLines, startIndex };
+  }, [lines, currentLineIndex, minVisibleLines]);
 
   const visibleStartChar = lineCharPositions[visibleLines.startIndex] || 0;
 
@@ -270,47 +292,28 @@ const UnifiedTypingBox = ({
     return value;
   }, []);
 
-  const currentWordStart = useMemo(() => {
-    return Math.max(0, inputValue.lastIndexOf(' ') + 1);
-  }, [inputValue]);
-
-  const currentWordEnd = useMemo(() => {
-    const nextSpace = promptText.indexOf(' ', currentWordStart);
-    return nextSpace === -1 ? promptText.length : nextSpace;
-  }, [promptText, currentWordStart]);
-
   // Render line characters with unique styling
   const renderLine = (line: string, lineStart: number) => {
-    const renderText = line.length > 0 && lineStart + line.length < promptText.length
-      ? `${line} `
-      : line;
-
-    return renderText.split('').map((char, idx) => {
+    return line.split('').map((char, idx) => {
       const absIdx = lineStart + idx;
       const typed = inputValue[absIdx];
       
       let cls = 'text-gray-400'; // untyped - soft gray
-      let style: CSSProperties = {};
+      let style = {};
       
       if (absIdx < inputValue.length) {
         if (typed === char) {
           cls = 'text-cyan-300'; // Correct - light cyan
         } else {
           cls = 'text-red-300'; // Wrong - muted red
-          // Rounded underline with subtle glow
+          // Rounded underline for error (instead of background)
           style = {
             textDecoration: 'underline wavy',
             textUnderlineOffset: '3px',
             textDecorationColor: 'rgba(252, 165, 165, 0.6)',
-            textDecorationThickness: '2px',
-            textShadow: '0 0 6px rgba(252, 165, 165, 0.35)'
+            textDecorationThickness: '2px'
           };
         }
-      } else if (highlightWord && absIdx >= currentWordStart && absIdx < currentWordEnd) {
-        cls = 'text-slate-200';
-        style = {
-          textShadow: '0 0 6px rgba(148, 163, 184, 0.35)'
-        };
       }
       
       // Cursor indicator - soft glowing bar
@@ -336,7 +339,7 @@ const UnifiedTypingBox = ({
 
   return (
     <div className="space-y-3">
-      {/* Fixed 5-line typing box */}
+      {/* Fixed 3-line typing box */}
       <div
         ref={containerRef}
         onClick={() => inputRef.current?.focus()}
@@ -346,12 +349,12 @@ const UnifiedTypingBox = ({
         style={{
           background: 'linear-gradient(180deg, hsl(210, 25%, 12%), hsl(210, 22%, 10%))',
           border: '1px solid hsl(210, 30%, 20%)',
-          minHeight: '320px',
-          maxHeight: '320px',
-          height: '320px',
-          padding: '28px 40px',
+          minHeight: `${boxHeightPx}px`,
+          maxHeight: `${boxHeightPx}px`,
+          height: `${boxHeightPx}px`,
+          padding: '24px 40px',
           margin: '0 auto',
-          maxWidth: '1080px',
+          maxWidth: '1200px',
           boxShadow: '0 8px 24px hsla(0, 0%, 0%, 0.4), inset 0 1px 0 hsla(0, 0%, 100%, 0.08)',
           overflow: 'hidden',
           display: 'flex',
@@ -361,48 +364,41 @@ const UnifiedTypingBox = ({
         }}
       >
         <div
-          ref={textContainerRef}
           className="select-none"
           style={{
             fontFamily: "'JetBrains Mono', 'ui-monospace', monospace",
             fontSize: '21px',
             fontWeight: 500,
-            lineHeight: '1.9',
+            lineHeight: '1.75',
             letterSpacing: '0.4px',
             width: '100%',
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
             justifyContent: 'flex-start',
             WebkitFontSmoothing: 'antialiased',
-            textRendering: 'optimizeLegibility'
+            textRendering: 'optimizeLegibility',
+            overflow: 'hidden'
           }}
         >
           {visibleLines.lines.map((line, idx) => {
-            const lineIndex = visibleLines.startIndex + idx;
-            const lineStart = lineCharPositions[lineIndex] ?? visibleStartChar;
-            const lineOpacity = idx === ACTIVE_LINE_INDEX ? 1 : idx < ACTIVE_LINE_INDEX ? 0.6 : 0.7;
+            const lineStart = visibleStartChar + 
+              visibleLines.lines.slice(0, idx).reduce((a, l) => a + l.length + 1, 0);
             
             // Always render the line container, even if empty
             return (
               <div 
                 key={currentLineIndex + idx} 
-                className="whitespace-pre"
+                className="whitespace-pre" 
                 style={{ 
-                  minHeight: '42px',
-                  height: '42px',
-                  lineHeight: '42px',
+                  minHeight: `${lineHeightPx}px`,
+                  height: `${lineHeightPx}px`,
+                  lineHeight: '1.75',
+                  marginBottom: idx < minVisibleLines - 1 ? `${lineGapPx}px` : '0',
                   overflow: 'hidden',
                   textOverflow: 'clip',
                   width: '100%',
-                  maxWidth: '100%',
-                  opacity: lineOpacity,
-                  transition: 'opacity 320ms ease-out, transform 320ms ease-out',
-                  transform: 'translateY(0)',
-                  willChange: 'opacity, transform',
-                  wordBreak: 'keep-all',
-                  whiteSpace: 'pre'
+                  maxWidth: '100%'
                 }}
               >
                 {line ? renderLine(line, lineStart) : <span className="text-gray-700">&nbsp;</span>}

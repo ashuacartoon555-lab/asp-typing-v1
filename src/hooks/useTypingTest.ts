@@ -26,7 +26,7 @@ import {
   fetchProgrammingReadmeApi
 } from '@/services/typingTestApi';
 
-export type Difficulty = 'easy' | 'medium' | 'hard' | 'custom';
+export type Difficulty = 'easy' | 'medium' | 'hard' | 'pro' | 'custom';
 export type TestMode = 'words' | 'sentences' | 'paragraph' | 'numbers' | 'quotes' | 'programming' | 'infinite';
 export type Language = 'english' | 'hinglish';
 
@@ -148,47 +148,14 @@ export function useTypingTest(): UseTypingTestReturn {
       return custom.trim();
     }
     
-    // HARD DIFFICULTY: Mix of numbers, sentences, quotes, programming, and paragraphs
-    if (diff === 'hard' && mode === 'words') {
-      const mixedContent: string[] = [];
-      
-      // Add numbers (20% of content)
-      const numSequences = numberSequences.slice(0, 3);
-      mixedContent.push(...numSequences);
-      
-      // Add sentences (25% of content)
-      const sentences = sentenceTemplates[lang] || sentenceTemplates.english;
-      const selectedSentences = sentences.slice(0, 3).sort(() => Math.random() - 0.5);
-      mixedContent.push(...selectedSentences);
-      
-      // Add programming snippets (20% of content) - only for English
-      if (lang === 'english') {
-        const snippets = programmingSnippets.slice(0, 3).sort(() => Math.random() - 0.5);
-        mixedContent.push(...snippets);
-      }
-      
-      // Add quotes (20% of content)
-      if (lang === 'english') {
-        const quotes = FALLBACK_QUOTES.slice(0, 2).sort(() => Math.random() - 0.5);
-        mixedContent.push(...quotes);
-      } else {
-        const moreSentences = sentences.slice(3, 5);
-        mixedContent.push(...moreSentences);
-      }
-      
-      // Add paragraph content (15% of content)
-      const paragraphs = paragraphTemplates[lang] || paragraphTemplates.english;
-      const paragraphSnippet = paragraphs[0] ? paragraphs[0].split('.').slice(0, 2).join('.') + '.' : '';
-      if (paragraphSnippet) mixedContent.push(paragraphSnippet);
-      
-      // Shuffle and join
-      const shuffled = mixedContent.sort(() => Math.random() - 0.5);
-      return shuffled.join(' ');
-    }
-    
     // Get word bank based on language and difficulty
     const getWordBank = () => {
-      const diffKey = diff === 'custom' || diff === 'hard' ? 'easy' : diff;
+      let diffKey: 'easy' | 'medium' | 'hard' = 'easy';
+      
+      if (diff === 'easy') diffKey = 'easy';
+      else if (diff === 'medium') diffKey = 'medium';
+      else if (diff === 'hard' || diff === 'pro' || diff === 'custom') diffKey = 'hard';
+      
       switch (lang) {
         case 'hinglish': return hinglishWordBanks[diffKey] || hinglishWordBanks.easy;
         default: return wordBanks[diffKey] || wordBanks.easy;
@@ -198,15 +165,55 @@ export function useTypingTest(): UseTypingTestReturn {
     // Generate based on test mode
     switch (mode) {
       case 'numbers': {
-        // Generate random number sequences
-        const sequences = [...numberSequences];
-        const count = Math.ceil(time / 3); // More numbers for longer tests
+        // DIFFICULTY-BASED NUMBER GENERATION
+        const count = Math.ceil(time / 3);
         let text = '';
-        for (let i = 0; i < count; i++) {
-          const seq = sequences[Math.floor(Math.random() * sequences.length)];
-          text += (i === 0 ? '' : ' ') + seq;
+        
+        if (diff === 'easy') {
+          // Easy: Simple single-digit and double-digit numbers
+          const simpleNumbers = ['0123456789', '1234567890', '10 20 30 40 50', '11 22 33 44 55'];
+          for (let i = 0; i < count; i++) {
+            const seq = simpleNumbers[Math.floor(Math.random() * simpleNumbers.length)];
+            text += (i === 0 ? '' : ' ') + seq;
+          }
+        } else if (diff === 'medium') {
+          // Medium: Multi-digit numbers and basic decimals
+          const mediumNumbers = ['100 200 300 400 500', '1.5 2.5 3.5 4.5 5.5', '12345 67890', '101 202 303 404'];
+          for (let i = 0; i < count; i++) {
+            const seq = mediumNumbers[Math.floor(Math.random() * mediumNumbers.length)];
+            text += (i === 0 ? '' : ' ') + seq;
+          }
+        } else if (diff === 'hard') {
+          // Hard: Complex numbers with decimals and patterns
+          const hardNumbers = [
+            '1.41421 2.71828 3.14159',
+            '11223344556677889900',
+            '1000 2000 3000 4000 5000',
+            '98765 43210 55555 99999'
+          ];
+          for (let i = 0; i < count; i++) {
+            const seq = hardNumbers[Math.floor(Math.random() * hardNumbers.length)];
+            text += (i === 0 ? '' : ' ') + seq;
+          }
+        } else if (diff === 'pro') {
+          // Pro: Numbers with special characters, operators, symbols
+          const proNumbers = [
+            '$1,234.56 €987.65 ¥543.21',
+            '192.168.1.1 255.255.0.0',
+            '#FF5733 #C70039 #900C3F',
+            '50% 75% 100% 33.33%',
+            'π ≈ 3.14159 | e ≈ 2.71828',
+            '1024 + 2048 = 3072',
+            'v3.1.4 @2026 &copy;',
+            '1 << 10 === 1024'
+          ];
+          for (let i = 0; i < count; i++) {
+            const seq = proNumbers[Math.floor(Math.random() * proNumbers.length)];
+            text += (i === 0 ? '' : ' ') + seq;
+          }
         }
-        return text;
+        
+        return text || numberSequences.join(' ');
       }
       
       case 'programming': {
@@ -219,35 +226,154 @@ export function useTypingTest(): UseTypingTestReturn {
           return allSentences.slice(0, count).join(' ');
         }
 
-        // Fallback to static snippets (API called in loadNewPrompt)
-        const minSnippets = 4; // Minimum 4 snippets
+        // DIFFICULTY-BASED PROGRAMMING CODE
+        const minSnippets = 4;
         const count = Math.max(minSnippets, Math.ceil(time / 5));
-        const shuffled = [...programmingSnippets].sort(() => Math.random() - 0.5);
-        // Repeat if not enough
+        
+        let codeSnippets: string[] = [];
+        
+        if (diff === 'easy') {
+          // Easy: Simple functions and basic syntax
+          codeSnippets = [
+            "function add(a, b) { return a + b; }",
+            "const name = 'John';",
+            "console.log('Hello World');",
+            "let count = 0;",
+            "if (x > 0) { return true; }",
+            "for (let i = 0; i < 5; i++) { }",
+            "const arr = [1, 2, 3];",
+            "return sum;"
+          ];
+        } else if (diff === 'medium') {
+          // Medium: Moderate complexity with arrays, objects
+          codeSnippets = [
+            "const array = [1, 2, 3, 4, 5]; array.map(x => x * 2);",
+            "const obj = { key: 'value', method() { return this.key; } }",
+            "function fetchData() { return fetch(url).then(res => res.json()); }",
+            "const [state, setState] = useState(initialValue);",
+            "if (condition) { doSomething(); } else { doSomethingElse(); }",
+            "class User { constructor(name) { this.name = name; } }",
+            "const result = data.filter(item => item.active);",
+            "localStorage.setItem('key', JSON.stringify(value));"
+          ];
+        } else if (diff === 'hard') {
+          // Hard: Complex code with async, types, advanced patterns
+          codeSnippets = [
+            "async function fetchData() { const res = await fetch(url); return res.json(); }",
+            "interface Props { title: string; onClick: () => void; optional?: boolean; }",
+            "const result = await Promise.all([promise1, promise2, promise3]);",
+            "useEffect(() => { const cleanup = subscribe(); return () => cleanup(); }, [dependency]);",
+            "export default class Component extends React.PureComponent<Props, State> {}",
+            "type Status = 'pending' | 'success' | 'error' | 'idle';",
+            "const debounce = (fn, delay) => { let timer; return (...args) => { clearTimeout(timer); }; };",
+            "try { await riskyOperation(); } catch (error) { handleError(error); } finally { cleanup(); }"
+          ];
+        } else if (diff === 'pro') {
+          // Pro: Advanced code with special chars, complex syntax
+          codeSnippets = [
+            "const user_id = 1024;",
+            "async function fetchData() {}",
+            'async function getData() { return await api.get("/users"); }',
+            'const handleClick = (e: Event) => { e.preventDefault(); };',
+            'interface User { id: number; name: string; email?: string; }',
+            'export default class Component extends React.PureComponent<Props> {}',
+            'useEffect(() => { fetchData().then(res => setData(res)); }, []);',
+            'let result = arr.filter(x => x > 0).map(x => x * 2);',
+            'const [state, setState] = useState<number>(0);',
+            'try { await db.query("SELECT * FROM users WHERE id = $1", [userId]); } catch (err) { log(err); }',
+            '$%#@! version 3.1',
+            'TypeScript (v5.0+) offers type-safety & flexibility.'
+          ];
+        }
+        
+        const shuffled = [...codeSnippets].sort(() => Math.random() - 0.5);
         const allSnippets = [...shuffled, ...shuffled];
         return allSnippets.slice(0, count).join(' ');
       }
       
       case 'sentences': {
-        // Get sentence templates for the language
+        // DIFFICULTY-BASED SENTENCE GENERATION
         const sentences = sentenceTemplates[lang] || sentenceTemplates.english;
-        const minSentences = 5; // Minimum 5 sentences for 3 lines
-        const count = Math.max(minSentences, Math.ceil(time / 10)); // One sentence per 10 seconds
-        const shuffled = [...sentences].sort(() => Math.random() - 0.5);
-        // Repeat if not enough sentences
+        const minSentences = 5;
+        const baseCount = Math.max(minSentences, Math.ceil(time / 10));
+        
+        let selectedSentences: string[] = [];
+        
+        if (diff === 'easy') {
+          // Easy: Simple, short sentences
+          const simpleSentences = sentences.filter(s => s.split(' ').length <= 8);
+          selectedSentences = simpleSentences.length > 0 ? simpleSentences : sentences.slice(0, 5);
+        } else if (diff === 'medium') {
+          // Medium: All available sentences
+          selectedSentences = [...sentences];
+        } else if (diff === 'hard') {
+          // Hard: Complex sentences + Numbers mixed in
+          const complexSentences = sentences.filter(s => s.split(' ').length > 8);
+          selectedSentences = complexSentences.length > 0 ? complexSentences : sentences;
+          // Add numbers (20% of content)
+          const numberSentences = [
+            '12345 67890 98765 43210',
+            '100 200 300 400 500',
+            '1.41421 2.71828 3.14159'
+          ];
+          selectedSentences.push(...numberSentences);
+        } else if (diff === 'pro') {
+          // Pro: Mix sentences with code, special chars, numbers
+          selectedSentences = [...sentences];
+          selectedSentences.push(
+            'const user_id = 1024;',
+            '$%#@! 2026 version 3.1',
+            '$1,234.56 €987.65 ¥543.21',
+            '"Success isn\'t final; failure isn\'t fatal!"',
+            'TypeScript (v5.0+) offers type-safety & flexibility.',
+            '192.168.1.1 255.255.0.0',
+            'async function fetchData() {}'
+          );
+        }
+        
+        const shuffled = [...selectedSentences].sort(() => Math.random() - 0.5);
         const allSentences = [...shuffled, ...shuffled];
-        return allSentences.slice(0, count).join(' ');
+        return allSentences.slice(0, baseCount).join(' ');
       }
       
       case 'paragraph': {
-        // Get paragraph templates for the language
+        // DIFFICULTY-BASED PARAGRAPH GENERATION
         const paragraphs = paragraphTemplates[lang] || paragraphTemplates.english;
-        const minParagraphs = 2; // Minimum 2 paragraphs
-        const count = Math.max(minParagraphs, Math.ceil(time / 60)); // One paragraph per minute
-        const shuffled = [...paragraphs].sort(() => Math.random() - 0.5);
-        // Repeat if not enough paragraphs
+        const minParagraphs = 2;
+        const baseCount = Math.max(minParagraphs, Math.ceil(time / 60));
+        
+        let content: string[] = [];
+        
+        if (diff === 'easy') {
+          // Easy: First 1-2 sentences from each paragraph
+          content = paragraphs.map(p => {
+            const sentences = p.split('. ');
+            return sentences.slice(0, 2).join('. ') + '.';
+          });
+        } else if (diff === 'medium') {
+          // Medium: Full paragraphs
+          content = [...paragraphs];
+        } else if (diff === 'hard') {
+          // Hard: Full paragraphs + complex sentences + Numbers
+          content = paragraphs.map(p => {
+            if (lang === 'english') {
+              return p + ' Furthermore, mastering this skill requires dedication, consistent practice, and attention to proper technique. Studies show that practicing 15-30 minutes daily can improve WPM by 10-20 points within 30-60 days.';
+            }
+            return p;
+          });
+        } else if (diff === 'pro') {
+          // Pro: Paragraphs with code, special chars, numbers mixed in
+          content = paragraphs.map(p => {
+            if (lang === 'english') {
+              return p + ' const user_id = 1024; async function fetchData() {} $%#@! TypeScript (v5.0+) offers type-safety & flexibility. Studies show 15-30 minutes daily improves WPM by 10-20 points.';
+            }
+            return p;
+          });
+        }
+        
+        const shuffled = [...content].sort(() => Math.random() - 0.5);
         const allParagraphs = [...shuffled, ...shuffled];
-        return allParagraphs.slice(0, count).join(' ');
+        return allParagraphs.slice(0, baseCount).join(' ');
       }
       
       case 'quotes': {
@@ -260,27 +386,111 @@ export function useTypingTest(): UseTypingTestReturn {
           return allSentences.slice(0, count).join(' ');
         }
 
-        // Return fallback quotes for now (will be replaced by API call)
-        const shuffled = [...FALLBACK_QUOTES].sort(() => Math.random() - 0.5);
-        const minQuotes = 3; // Minimum 3 quotes
-        const count = Math.max(minQuotes, Math.ceil(time / 15)); // One quote per 15 seconds
+        // DIFFICULTY-BASED QUOTE GENERATION (English only)
+        const minQuotes = 3;
+        const baseCount = Math.max(minQuotes, Math.ceil(time / 15));
+        
+        let selectedQuotes: string[] = [];
+        
+        if (diff === 'easy') {
+          // Easy: Shorter, simpler quotes
+          selectedQuotes = FALLBACK_QUOTES.filter(q => q.split(' ').length <= 12);
+          if (selectedQuotes.length === 0) selectedQuotes = FALLBACK_QUOTES.slice(0, 5);
+        } else if (diff === 'medium') {
+          // Medium: All quotes
+          selectedQuotes = [...FALLBACK_QUOTES];
+        } else if (diff === 'hard') {
+          // Hard: Longer complex quotes + Numbers
+          selectedQuotes = FALLBACK_QUOTES.filter(q => q.split(' ').length > 12);
+          if (selectedQuotes.length === 0) selectedQuotes = [...FALLBACK_QUOTES];
+          // Add number sequences
+          selectedQuotes.push(
+            '1234567890 0987654321',
+            '100 200 300 400 500 600',
+            '3.14159 2.71828 1.41421'
+          );
+        } else if (diff === 'pro') {
+          // Pro: Quotes with code, special chars, numbers
+          selectedQuotes = [...FALLBACK_QUOTES];
+          selectedQuotes.push(
+            'const user_id = 1024;',
+            'async function fetchData() {}',
+            '$%#@! 2026 version 3.1',
+            '$1,234.56 €987.65',
+            '192.168.1.1 255.255.0.0',
+            '"Success isn\'t final!"',
+            'TypeScript (v5.0+) & JavaScript'
+          );
+        }
+        
+        const shuffled = [...selectedQuotes].sort(() => Math.random() - 0.5);
         const allQuotes = [...shuffled, ...shuffled];
-        return allQuotes.slice(0, count).join(' ');
+        return allQuotes.slice(0, baseCount).join(' ');
       }
       
       case 'words':
       default: {
-        // Generate random words from word bank
+        // DIFFICULTY-BASED WORD GENERATION
+        // Easy: Common daily words (the, be, to, of, and)
+        // Medium: Technical/moderate words (technology, asynchronous, implementation)
+        // Hard: Long complex words + Numbers mixed in
+        // Pro: Advanced mixed content (handled above)
         const words = getWordBank();
-        // Ensure minimum words for at least 5 lines (minimum 150 words for proper display)
-        const minWords = 150;
-        const wordsNeeded = Math.max(minWords, Math.ceil((time / 60) * 70)); // 70 words per minute, min 150
+        const minWords = 80;
+        const wordsNeeded = Math.max(minWords, Math.ceil((time / 60) * 50));
         let text = '';
         
-        for (let i = 0; i < wordsNeeded; i++) {
-          const randomWord = words[Math.floor(Math.random() * words.length)];
-          text += (i === 0 ? '' : ' ') + randomWord;
+        if (diff === 'hard') {
+          // Hard: Mix long words with numbers (70% words, 30% numbers)
+          for (let i = 0; i < wordsNeeded; i++) {
+            if (Math.random() < 0.3) {
+              // Add numbers
+              const numberSeqs = [
+                '1234567890', '100 200 300', '1.41421 3.14159', 
+                '12345 67890', '98765 43210'
+              ];
+              const randomNum = numberSeqs[Math.floor(Math.random() * numberSeqs.length)];
+              text += (i === 0 ? '' : ' ') + randomNum;
+            } else {
+              // Add long complex words
+              const randomWord = words[Math.floor(Math.random() * words.length)];
+              text += (i === 0 ? '' : ' ') + randomWord;
+            }
+          }
+        } else if (diff === 'pro') {
+          // Pro: Mix code, special chars, numbers, complex words
+          const proContent = [
+            'const user_id = 1024;',
+            'async function fetchData() {}',
+            '$%#@! 2026 version 3.1',
+            '$1,234.56 €987.65',
+            '192.168.1.1',
+            '#FF5733',
+            '50% 75% 100%',
+            '"Success isn\'t final!"',
+            'TypeScript (v5.0+)',
+            'const handleClick = (e: Event) => {}',
+            'π ≈ 3.14159'
+          ];
+          for (let i = 0; i < wordsNeeded; i++) {
+            if (Math.random() < 0.4) {
+              // 40% pro content
+              const randomPro = proContent[Math.floor(Math.random() * proContent.length)];
+              text += (i === 0 ? '' : ' ') + randomPro;
+            } else {
+              // 60% hard words
+              const randomWord = words[Math.floor(Math.random() * words.length)];
+              text += (i === 0 ? '' : ' ') + randomWord;
+            }
+          }
+        } else {
+          // Easy & Medium: Words only
+          for (let i = 0; i < wordsNeeded; i++) {
+            const randomWord = words[Math.floor(Math.random() * words.length)];
+            text += (i === 0 ? '' : ' ') + randomWord;
+          }
         }
+        
         return text;
       }
     }
@@ -292,134 +502,28 @@ export function useTypingTest(): UseTypingTestReturn {
     diff: Difficulty,
     time: number
   ): Promise<string> => {
-    const ensureMinWords = async (text: string, minWords: number, loader: () => Promise<string>) => {
-      const wordCount = text.split(' ').filter(w => w).length;
-      if (wordCount >= minWords) return text;
-      const extra = await loader();
-      return `${text} ${extra}`.trim();
-    };
-
-    const isEnglish = lang === 'english';
-
-    if (!isEnglish) {
-      return generatePrompt(diff, time, customText, mode, lang);
-    }
-
-    switch (mode) {
-      case 'words': {
-        if (diff === 'hard') {
-          const result = await fetchDatamuseWordsApi('hard', 200);
-          return ensureMinWords(result.text, 150, async () => {
-            const more = await fetchDatamuseWordsApi('hard', 200);
-            return more.text;
-          });
-        }
-        const result = await fetchRandomWordsApi(200);
-        return ensureMinWords(result.text, 150, async () => {
-          const more = await fetchRandomWordsApi(200);
-          return more.text;
-        });
-      }
-      case 'sentences': {
-        const result = await fetchQuotableRandomApi(80, 200);
-        return ensureMinWords(result.text, 110, async () => {
-          const more = await fetchQuotableRandomApi(80, 200);
-          return more.text;
-        });
-      }
-      case 'paragraph': {
-        const result = await fetchWikipediaSummaryApi();
-        return ensureMinWords(result.text, 130, async () => {
-          const more = await fetchWikipediaSummaryApi();
-          return more.text;
-        });
-      }
-      case 'numbers': {
-        const result = await fetchNumbersApi(5);
-        return ensureMinWords(result.text, 80, async () => {
-          const more = await fetchNumbersApi(5);
-          return more.text;
-        });
-      }
-      case 'quotes': {
-        const result = await fetchQuotableRandomApi(150, 350);
-        return ensureMinWords(result.text, 110, async () => {
-          const more = await fetchQuotableRandomApi(150, 350);
-          return more.text;
-        });
-      }
-      case 'programming': {
-        const result = await fetchProgrammingReadmeApi();
-        return ensureMinWords(result.text, 130, async () => {
-          const more = await fetchProgrammingReadmeApi();
-          return more.text;
-        });
-      }
-      case 'infinite':
-      default: {
-        const result = await fetchInfiniteTextApi();
-        return ensureMinWords(result.text, 150, async () => {
-          const more = await fetchInfiniteTextApi();
-          return more.text;
-        });
-      }
-    }
+    // ALWAYS use generatePrompt to respect difficulty levels
+    // APIs don't filter by difficulty, so they return random/complex words
+    return generatePrompt(diff, time, customText, mode, lang);
   }, [customText, generatePrompt]);
 
   // Load more text (for infinite typing - enhanced per mode)
   const loadMoreText = useCallback(async () => {
-    if (isLoadingRef.current) {
-      console.log('⏳ Already loading text, skipping...');
-      return;
-    }
+    if (isLoadingRef.current) return;
     
     isLoadingRef.current = true;
-    console.log('📥 Loading more text for mode:', testMode);
-    
-    // Safety timeout: force reset loading ref after 10 seconds
-    const safetyTimeout = setTimeout(() => {
-      if (isLoadingRef.current) {
-        console.warn('⚠️ Loading timeout - forcing ref reset');
-        isLoadingRef.current = false;
-      }
-    }, 10000);
     
     try {
-      // Try API fetch
       const nextText = await fetchModeText(testMode, language, difficulty, totalTime);
-      if (nextText && nextText.trim().length > 0) {
-        setPromptText(prev => {
-          const newText = prev + " " + nextText;
-          return newText;
-        });
-        console.log('✅ Loaded', nextText.split(' ').length, 'more words');
-      } else {
-        // If API returns empty, generate fallback immediately
-        throw new Error('Empty text from API');
-      }
-    } catch (error) {
-      console.error('❌ Load error, using fallback:', error);
-      try {
-        // Try fallback API
-        const fallbackText = await fetchQuotesFromAPI();
-        if (fallbackText && fallbackText.trim()) {
-          setPromptText(prev => prev + " " + fallbackText);
-          console.log('✅ Loaded fallback text');
-        } else {
-          throw new Error('Fallback API also empty');
-        }
-      } catch (fallbackError) {
-        // Generate guaranteed local text if all APIs fail
-        console.warn('⚠️ All APIs failed, generating local text');
-        const localText = generatePrompt(difficulty, 60, '', testMode, language);
-        setPromptText(prev => prev + " " + localText);
-        console.log('✅ Generated local fallback text');
-      }
+      setPromptText(prev => prev + " " + nextText);
+      lastLoadPositionRef.current = (promptTextRef.current + " " + nextText).length;
+    } catch {
+      const fallbackText = await fetchQuotesFromAPI();
+      setPromptText(prev => prev + " " + fallbackText);
     } finally {
-      clearTimeout(safetyTimeout);
       isLoadingRef.current = false;
     }
-  }, [fetchModeText, fetchQuotesFromAPI, generatePrompt, testMode, language, difficulty, totalTime]);
+  }, [fetchModeText, fetchQuotesFromAPI, testMode, language, difficulty, totalTime]);
 
 
   const loadNewPrompt = useCallback(async () => {
@@ -460,23 +564,10 @@ export function useTypingTest(): UseTypingTestReturn {
         setPromptText(defaultText);
         console.log('Default text loaded:', defaultText.substring(0, 50) + '...');
       }
+    } else {
+      console.log('Prompt text loaded successfully. Length:', promptText.length, 'Words:', promptText.split(' ').length);
     }
   }, [promptText, difficulty, language, generatePrompt]);
-
-  // ULTIMATE SAFETY: If user is within 200 chars of end, force immediate text generation
-  useEffect(() => {
-    if (!testStarted) return;
-    
-    const remainingChars = Math.max(0, promptText.length - inputValue.length);
-    
-    if (remainingChars < 200) {
-      console.error('🚨 CRITICAL: Only', remainingChars, 'chars left! Force generating text NOW!');
-      // Don't wait for APIs, generate immediately
-      const criticalText = generatePrompt(difficulty, 60, '', testMode, language);
-      setPromptText(prev => prev + " " + criticalText);
-      console.log('🚨 Critical text added:', criticalText.split(' ').length, 'words');
-    }
-  }, [inputValue.length, promptText.length, testStarted, difficulty, testMode, language, generatePrompt]);
 
   const calculateStats = useCallback((input: string, prompt: string, timeElapsed: number) => {
     if (input.length === 0) {
@@ -521,45 +612,18 @@ export function useTypingTest(): UseTypingTestReturn {
   // Calculate elapsed time for display
   const elapsedTime = testStarted ? Math.round((Date.now() - startTimeRef.current) / 1000) : 0;
 
-  // Auto-load more text when remaining buffer gets low (ALL MODES - GUARANTEED INFINITE)
+  // Auto-load more text when user has typed 70% of current text (ALL MODES)
   useEffect(() => {
-    if (!testStarted) return;
-    
-    const remainingChars = Math.max(0, promptText.length - inputValue.length);
-    const percentTyped = promptText.length > 0 ? inputValue.length / promptText.length : 0;
-    
-    // Load VERY early and aggressively - at 40% OR 1000 chars remaining
     const shouldAutoLoad = 
-      (percentTyped > 0.4 || remainingChars < 1000) &&
+      testStarted && 
+      inputValue.length > promptText.length * 0.7 && 
       !isLoadingRef.current;
       
     if (shouldAutoLoad) {
-      console.log('🔄 Auto-loading more text... Remaining:', remainingChars, 'chars, Progress:', Math.round(percentTyped * 100) + '%');
-      loadMoreText().catch(err => {
-        console.error('Load more text failed:', err);
-        // Force reset ref on error
-        isLoadingRef.current = false;
-      });
+      console.log('🔄 Auto-loading more text for current mode...');
+      loadMoreText();
     }
   }, [inputValue.length, promptText.length, testStarted, loadMoreText]);
-
-  // SAFETY: Emergency load if text is about to run out
-  useEffect(() => {
-    if (!testStarted) return;
-    
-    const remainingChars = Math.max(0, promptText.length - inputValue.length);
-    
-    if (remainingChars < 500 && !isLoadingRef.current) {
-      console.warn('⚠️ EMERGENCY TEXT LOAD - Only', remainingChars, 'chars left!');
-      loadMoreText().catch(err => {
-        console.error('Emergency load failed:', err);
-        // CRITICAL: Generate local text immediately
-        const emergencyText = generatePrompt(difficulty, 60, '', testMode, language);
-        setPromptText(prev => prev + " " + emergencyText);
-        isLoadingRef.current = false;
-      });
-    }
-  }, [inputValue.length, promptText.length, testStarted, loadMoreText, generatePrompt, difficulty, testMode, language]);
 
   const autoStartedRef = useRef<boolean>(false);
   const lastInputLengthRef = useRef<number>(0);
@@ -599,32 +663,13 @@ export function useTypingTest(): UseTypingTestReturn {
     setInputValueState(value);
   }, [testReady, testStarted, testCompleted, inputValue, totalTime, promptText, playSound]);
 
-  useEffect(() => {
-    if (testStarted && currentTime > 0) {
-      timerRef.current = setInterval(() => {
-        setCurrentTime(prev => {
-          if (prev <= 1) {
-            // Trigger finish with actual elapsed time
-            const actualTimeElapsed = Math.round((Date.now() - startTimeRef.current) / 1000);
-            finishTestWithTime(actualTimeElapsed);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [testStarted]);
-
   const finishTestWithTime = useCallback((timeTaken: number) => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
+    
+    // Clamp time to totalTime to prevent display issues
+    const displayTime = Math.min(timeTaken, totalTime);
     
     // Play end sound (if enabled)
     try { playSound('end'); } catch (e) { /* ignore if sound unavailable */ }
@@ -634,7 +679,7 @@ export function useTypingTest(): UseTypingTestReturn {
     
     const currentInput = inputValueRef.current;
     const currentPrompt = promptTextRef.current;
-    const { wpm, accuracy, errors } = calculateStats(currentInput, currentPrompt, timeTaken);
+    const { wpm, accuracy, errors } = calculateStats(currentInput, currentPrompt, displayTime);
     
     const testDate = new Date().toISOString();
     
@@ -642,7 +687,7 @@ export function useTypingTest(): UseTypingTestReturn {
       wpm,
       accuracy,
       errors,
-      timeTaken,
+      timeTaken: displayTime,
       date: testDate
     });
 
@@ -661,7 +706,7 @@ export function useTypingTest(): UseTypingTestReturn {
         difficulty: difficulty,
         date: testDate,
         mode: testMode,
-        timeElapsed: timeTaken,
+        timeElapsed: displayTime,
         wordsTyped: currentInput.trim().split(/\s+/).length,
         errorsCount: errors,
         weakKeys: weakKeys.slice(0, 10) // Top 10 weak keys
@@ -673,31 +718,55 @@ export function useTypingTest(): UseTypingTestReturn {
         difficulty: difficulty,
         date: testDate,
         mode: testMode,
-        timeElapsed: timeTaken,
+        timeElapsed: displayTime,
         wordsTyped: currentInput.trim().split(/\s+/).length,
         errorsCount: errors
       });
 
       storageManager.updatePerformanceByType({
+        mode: testMode,
         wpm,
         accuracy,
-        difficulty: difficulty,
-        date: testDate,
-        mode: testMode,
-        timeElapsed: timeTaken,
-        wordsTyped: currentInput.trim().split(/\s+/).length,
-        errorsCount: errors
+        timeElapsed: displayTime
       });
-    } catch (e) {
-      console.log('Storage update failed:', e);
+      
+    } catch (error) {
+      console.error('Error saving test results:', error);
     }
-    
-    // Emit event to notify other components (e.g., Analytics) that test completed
-    window.dispatchEvent(new Event('test-completed'));
-    
+
+    // Achievement notifications
+    const achievements = storageManager.getAchievements();
+    const newlyUnlocked = achievements.filter((a: any) => 
+      a.unlockedAt && new Date(a.unlockedAt).getTime() > Date.now() - 5000
+    );
+    if (newlyUnlocked.length > 0) {
+      console.log('🏆 New achievements unlocked:', newlyUnlocked.map((a: any) => a.name).join(', '));
+    }
+
     const randomMotivation = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
     setMotivation(randomMotivation);
-  }, [calculateStats, difficulty, testMode]);
+  }, [difficulty, testMode, playSound, totalTime]);
+
+  useEffect(() => {
+    if (testStarted && currentTime > 0) {
+      timerRef.current = setInterval(() => {
+        setCurrentTime(prev => {
+          if (prev <= 1) {
+            // Finish test with the exact duration selected (totalTime)
+            finishTestWithTime(totalTime);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [testStarted, totalTime, finishTestWithTime]);
 
   const startTest = useCallback(() => {
     setTestCompleted(false);

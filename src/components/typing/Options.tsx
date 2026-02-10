@@ -51,6 +51,7 @@ const difficultyOptions: { value: Difficulty; label: string }[] = [
   { value: 'easy', label: 'Easy' },
   { value: 'medium', label: 'Medium' },
   { value: 'hard', label: 'Hard' },
+  { value: 'pro', label: 'Pro' },
   { value: 'custom', label: 'Custom' },
 ];
 
@@ -121,8 +122,8 @@ const Options = ({
       <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:hidden">
         {/* Duration */}
         <Select value={totalTime.toString()} onValueChange={(value) => onTimeChange(Number(value))} disabled={disabled}>
-          <SelectTrigger className="h-10 text-xs sm:text-sm border-2 border-emerald-400/50 bg-gradient-to-r from-emerald-500/15 via-teal-500/15 to-cyan-500/15 text-foreground font-medium px-2 sm:px-3 py-1 shadow-[0_0_0_2px_rgba(16,185,129,0.25)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.4)] rounded-lg">
-            <SelectValue>{selectedDurationLabel}</SelectValue>
+          <SelectTrigger className="h-10 min-w-0 overflow-hidden text-xs sm:text-sm border-2 border-emerald-400/50 bg-gradient-to-r from-emerald-500/15 via-teal-500/15 to-cyan-500/15 text-foreground font-medium px-2 sm:px-3 py-1 shadow-[0_0_0_2px_rgba(16,185,129,0.25)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.4)] rounded-lg">
+            <SelectValue className="truncate">{selectedDurationLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {timeOptions.map(option => (
@@ -135,8 +136,8 @@ const Options = ({
 
         {/* Mode */}
         <Select value={testMode} onValueChange={(value) => onTestModeChange(value as TestMode)} disabled={disabled}>
-          <SelectTrigger className="h-10 text-xs sm:text-sm border-2 border-sky-400/50 bg-gradient-to-r from-sky-500/15 via-blue-500/15 to-indigo-500/15 text-foreground font-medium px-2 sm:px-3 py-1 shadow-[0_0_0_2px_rgba(59,130,246,0.25)] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.4)] rounded-lg">
-            <SelectValue>{selectedModeLabel}</SelectValue>
+          <SelectTrigger className="h-10 min-w-0 overflow-hidden text-xs sm:text-sm border-2 border-sky-400/50 bg-gradient-to-r from-sky-500/15 via-blue-500/15 to-indigo-500/15 text-foreground font-medium px-2 sm:px-3 py-1 shadow-[0_0_0_2px_rgba(59,130,246,0.25)] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.4)] rounded-lg">
+            <SelectValue className="truncate">{selectedModeLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {testModeOptions.map(option => (
@@ -149,8 +150,8 @@ const Options = ({
 
         {/* Difficulty */}
         <Select value={difficulty} onValueChange={handleDifficultySelect} disabled={disabled}>
-          <SelectTrigger className="h-10 text-xs sm:text-sm border-2 border-amber-400/50 bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/15 text-foreground font-medium px-2 sm:px-3 py-1 shadow-[0_0_0_2px_rgba(245,158,11,0.25)] hover:shadow-[0_0_0_3px_rgba(245,158,11,0.4)] rounded-lg">
-            <SelectValue>{selectedDifficultyLabel}</SelectValue>
+          <SelectTrigger className="h-10 min-w-0 overflow-hidden text-xs sm:text-sm border-2 border-amber-400/50 bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/15 text-foreground font-medium px-2 sm:px-3 py-1 shadow-[0_0_0_2px_rgba(245,158,11,0.25)] hover:shadow-[0_0_0_3px_rgba(245,158,11,0.4)] rounded-lg">
+            <SelectValue className="truncate">{selectedDifficultyLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {difficultyOptions.map(option => (
@@ -164,8 +165,8 @@ const Options = ({
 
         {/* Language */}
         <Select value={language} onValueChange={(value) => onLanguageChange(value as Language)} disabled={disabled}>
-          <SelectTrigger className="h-10 text-xs sm:text-sm border-2 border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-500/15 via-purple-500/15 to-violet-500/15 text-foreground font-medium px-2 sm:px-3 py-1 shadow-[0_0_0_2px_rgba(217,70,239,0.25)] hover:shadow-[0_0_0_3px_rgba(217,70,239,0.4)] rounded-lg">
-            <SelectValue>{selectedLanguageLabel}</SelectValue>
+          <SelectTrigger className="h-10 min-w-0 overflow-hidden text-xs sm:text-sm border-2 border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-500/15 via-purple-500/15 to-violet-500/15 text-foreground font-medium px-2 sm:px-3 py-1 shadow-[0_0_0_2px_rgba(217,70,239,0.25)] hover:shadow-[0_0_0_3px_rgba(217,70,239,0.4)] rounded-lg">
+            <SelectValue className="truncate">{selectedLanguageLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {languageOptions.map(option => (
@@ -190,8 +191,8 @@ const Options = ({
       <div className="hidden lg:flex flex-wrap items-center justify-center gap-3">
         {/* Duration */}
         <Select value={totalTime.toString()} onValueChange={(value) => onTimeChange(Number(value))} disabled={disabled}>
-          <SelectTrigger className="h-11 w-[140px] border-2 border-emerald-400/50 bg-gradient-to-r from-emerald-500/15 via-teal-500/15 to-cyan-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(16,185,129,0.25)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.4)] rounded-lg">
-            <SelectValue>{selectedDurationLabel}</SelectValue>
+          <SelectTrigger className="h-11 w-[140px] min-w-0 overflow-hidden border-2 border-emerald-400/50 bg-gradient-to-r from-emerald-500/15 via-teal-500/15 to-cyan-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(16,185,129,0.25)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.4)] rounded-lg">
+            <SelectValue className="truncate">{selectedDurationLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {timeOptions.map(option => (
@@ -207,8 +208,8 @@ const Options = ({
 
         {/* Mode */}
         <Select value={testMode} onValueChange={(value) => onTestModeChange(value as TestMode)} disabled={disabled}>
-          <SelectTrigger className="h-11 w-[140px] border-2 border-sky-400/50 bg-gradient-to-r from-sky-500/15 via-blue-500/15 to-indigo-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(59,130,246,0.25)] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.4)] rounded-lg">
-            <SelectValue>{selectedModeLabel}</SelectValue>
+          <SelectTrigger className="h-11 w-[140px] min-w-0 overflow-hidden border-2 border-sky-400/50 bg-gradient-to-r from-sky-500/15 via-blue-500/15 to-indigo-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(59,130,246,0.25)] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.4)] rounded-lg">
+            <SelectValue className="truncate">{selectedModeLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {testModeOptions.map(option => (
@@ -224,8 +225,8 @@ const Options = ({
 
         {/* Difficulty */}
         <Select value={difficulty} onValueChange={handleDifficultySelect} disabled={disabled}>
-          <SelectTrigger className="h-11 w-[140px] border-2 border-amber-400/50 bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(245,158,11,0.25)] hover:shadow-[0_0_0_3px_rgba(245,158,11,0.4)] rounded-lg">
-            <SelectValue>{selectedDifficultyLabel}</SelectValue>
+          <SelectTrigger className="h-11 w-[140px] min-w-0 overflow-hidden border-2 border-amber-400/50 bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(245,158,11,0.25)] hover:shadow-[0_0_0_3px_rgba(245,158,11,0.4)] rounded-lg">
+            <SelectValue className="truncate">{selectedDifficultyLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {difficultyOptions.map(option => (
@@ -242,8 +243,8 @@ const Options = ({
 
         {/* Language */}
         <Select value={language} onValueChange={(value) => onLanguageChange(value as Language)} disabled={disabled}>
-          <SelectTrigger className="h-11 w-[140px] border-2 border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-500/15 via-purple-500/15 to-violet-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(217,70,239,0.25)] hover:shadow-[0_0_0_3px_rgba(217,70,239,0.4)] rounded-lg">
-            <SelectValue>{selectedLanguageLabel}</SelectValue>
+          <SelectTrigger className="h-11 w-[140px] min-w-0 overflow-hidden border-2 border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-500/15 via-purple-500/15 to-violet-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(217,70,239,0.25)] hover:shadow-[0_0_0_3px_rgba(217,70,239,0.4)] rounded-lg">
+            <SelectValue className="truncate">{selectedLanguageLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {languageOptions.map(option => (

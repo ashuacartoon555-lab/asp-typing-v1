@@ -25,12 +25,20 @@ export const wordBanks = {
     "scalability", "compatibility", "flexibility", "modularity", "portability",
     "maintainability", "readability", "documentation", "specification", "implementation",
     "deployment", "integration", "validation", "verification", "authentication",
-    "authorization", "encryption", "decryption", "security", "privacy", "confidentiality",
+    "authorization", "encryption", "decryption", "security", "privacy", "confidentiality"
+  ],
+  
+  hard: [
     "pneumonoultramicroscopicsilicovolcanoconiosis", "floccinaucinihilipilification",
     "antidisestablishmentarianism", "honorificabilitudinitatibus", "thyroparathyroidectomized",
     "dichlorodifluoromethane", "supercalifragilisticexpialidocious", "pseudopseudohypoparathyroidism",
     "spectrophotofluorometrically", "uncharacteristically", "counterrevolutionaries",
-    "electroencephalographically", "immunoelectrophoretically", "psychophysicotherapeutics"
+    "electroencephalographically", "immunoelectrophoretically", "psychophysicotherapeutics",
+    "incomprehensibilities", "philosophicopsychological", "electrocardiographically",
+    "immunoelectrophoresis", "characteristically", "disproportionableness",
+    "indistinguishableness", "straightforwardness", "comprehensibleness", "characteristical",
+    "transformationalist", "internationalization", "incomprehensibility", "hypercholesterolemia",
+    "compartmentalization", "constitutionalization", "overintellectualization", "counterdemonstration"
   ]
 };
 
@@ -68,11 +76,14 @@ export const hinglishWordBanks = {
     "computer", "laptop", "mobile", "technology", "software", "hardware", "network",
     "database", "application", "program", "website", "email", "password", "username",
     "download", "upload", "online", "offline", "wifi", "bluetooth", "document", "file",
-    "folder", "meeting", "conference", "presentation", "project", "deadline", "schedule"
+    "folder", "meeting", "conference", "presentation", "project", "deadline", "schedule",
+    "assignment", "examination", "semester", "college", "university", "professor", "teacher"
   ],
   hard: [
     "implementation", "documentation", "specification", "optimization", "synchronization",
-    "authentication", "authorization", "encryption", "development", "deployment"
+    "authentication", "authorization", "encryption", "development", "deployment",
+    "infrastructure", "architecture", "configuration", "integration", "compatibility",
+    "functionality", "maintenance", "operational", "organizational", "productivity"
   ]
 };
 
