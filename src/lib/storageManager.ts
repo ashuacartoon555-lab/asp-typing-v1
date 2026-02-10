@@ -140,6 +140,11 @@ class StorageManager {
   /**
    * === ACHIEVEMENTS & BADGES ===
    */
+  getAchievements(): AchievementBadge[] {
+    const data = localStorage.getItem(`${this.PREFIX}badges`);
+    return data ? JSON.parse(data) : [];
+  }
+
   getBadges(): AchievementBadge[] {
     const data = localStorage.getItem(`${this.PREFIX}badges`);
     return data ? JSON.parse(data) : [];

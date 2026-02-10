@@ -315,7 +315,7 @@ const ErrorAnalysis = ({ promptText, inputValue, result }: ErrorAnalysisProps) =
 
       {sortedErrors.length === 0 ? (
         <div className="text-center py-6 bg-green-500/10 rounded-xl border border-green-500/30">
-          <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2" />
+          <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2" strokeWidth={3} fill="currentColor" />
           <p className="font-semibold text-green-600 dark:text-green-400">Perfect Score!</p>
           <p className="text-sm text-muted-foreground">No errors detected. Excellent typing!</p>
         </div>

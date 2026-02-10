@@ -208,9 +208,9 @@ const ExamInterface = ({ examType, onBack }: ExamInterfaceProps) => {
         <div className="card-gradient p-6 md:p-8 rounded-3xl shadow-lg border border-border">
           <div className="text-center mb-6">
             {result.passed ? (
-              <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" />
+              <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" strokeWidth={2} fill="currentColor" />
             ) : (
-              <XCircle className="w-16 h-16 mx-auto text-red-500 mb-4" />
+              <XCircle className="w-16 h-16 mx-auto text-red-500 mb-4" strokeWidth={2} fill="currentColor" />
             )}
             <h2 className="text-2xl font-bold mb-2">
               {result.passed ? 'Congratulations! You Passed!' : 'Keep Practicing!'}

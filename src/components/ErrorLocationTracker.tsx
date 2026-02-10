@@ -19,7 +19,7 @@ const ErrorLocationTracker = ({ errors, promptText, onClear }: ErrorLocationTrac
   if (errors.length === 0) {
     return (
       <div className="p-4 rounded-lg bg-success/10 border border-success/30 text-center">
-        <CheckCircle className="w-6 h-6 text-success mx-auto mb-2" />
+        <CheckCircle className="w-6 h-6 text-success mx-auto mb-2" strokeWidth={2.5} fill="currentColor" />
         <p className="text-sm font-medium text-success">Perfect! No errors detected.</p>
       </div>
     );
