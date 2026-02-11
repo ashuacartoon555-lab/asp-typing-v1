@@ -109,15 +109,6 @@ const Options = ({
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4 w-full">
-      {/* Labels - Only show on desktop */}
-      <div className="hidden lg:grid grid-cols-5 gap-2 px-1 text-xs uppercase tracking-wide font-semibold text-muted-foreground">
-        <span>Duration</span>
-        <span>Mode</span>
-        <span>Difficulty</span>
-        <span>Language</span>
-        <span>Challenges</span>
-      </div>
-
       {/* Mobile: 2x3 Grid Layout */}
       <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:hidden">
         {/* Duration */}
@@ -187,83 +178,98 @@ const Options = ({
         </div>
       </div>
 
-      {/* Tablet & Desktop: Flex Row Layout */}
-      <div className="hidden lg:flex flex-wrap items-center justify-center gap-3">
+      {/* Tablet & Desktop: Flex Row Layout with Labels */}
+      <div className="hidden lg:flex flex-wrap items-end justify-center gap-3">
         {/* Duration */}
-        <Select value={totalTime.toString()} onValueChange={(value) => onTimeChange(Number(value))} disabled={disabled}>
-          <SelectTrigger className="h-11 w-[140px] min-w-0 overflow-hidden border-2 border-emerald-400/50 bg-gradient-to-r from-emerald-500/15 via-teal-500/15 to-cyan-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(16,185,129,0.25)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.4)] rounded-lg">
-            <SelectValue className="truncate">{selectedDurationLabel}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {timeOptions.map(option => (
-              <SelectItem key={option.value} value={option.value.toString()}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs uppercase tracking-wide font-semibold text-muted-foreground px-1">Duration</span>
+          <Select value={totalTime.toString()} onValueChange={(value) => onTimeChange(Number(value))} disabled={disabled}>
+            <SelectTrigger className="h-11 w-[120px] min-w-0 overflow-hidden border-2 border-emerald-400/50 bg-gradient-to-r from-emerald-500/15 via-teal-500/15 to-cyan-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(16,185,129,0.25)] hover:shadow-[0_0_0_3px_rgba(16,185,129,0.4)] rounded-lg">
+              <SelectValue className="truncate">{selectedDurationLabel}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {timeOptions.map(option => (
+                <SelectItem key={option.value} value={option.value.toString()}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Separator */}
-        <div className="w-px h-8 bg-border" />
+        <div className="w-px h-11 bg-border self-end" />
 
         {/* Mode */}
-        <Select value={testMode} onValueChange={(value) => onTestModeChange(value as TestMode)} disabled={disabled}>
-          <SelectTrigger className="h-11 w-[140px] min-w-0 overflow-hidden border-2 border-sky-400/50 bg-gradient-to-r from-sky-500/15 via-blue-500/15 to-indigo-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(59,130,246,0.25)] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.4)] rounded-lg">
-            <SelectValue className="truncate">{selectedModeLabel}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {testModeOptions.map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs uppercase tracking-wide font-semibold text-muted-foreground px-1">Mode</span>
+          <Select value={testMode} onValueChange={(value) => onTestModeChange(value as TestMode)} disabled={disabled}>
+            <SelectTrigger className="h-11 w-[120px] min-w-0 overflow-hidden border-2 border-sky-400/50 bg-gradient-to-r from-sky-500/15 via-blue-500/15 to-indigo-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(59,130,246,0.25)] hover:shadow-[0_0_0_3px_rgba(59,130,246,0.4)] rounded-lg">
+              <SelectValue className="truncate">{selectedModeLabel}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {testModeOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Separator */}
-        <div className="w-px h-8 bg-border" />
+        <div className="w-px h-11 bg-border self-end" />
 
         {/* Difficulty */}
-        <Select value={difficulty} onValueChange={handleDifficultySelect} disabled={disabled}>
-          <SelectTrigger className="h-11 w-[140px] min-w-0 overflow-hidden border-2 border-amber-400/50 bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(245,158,11,0.25)] hover:shadow-[0_0_0_3px_rgba(245,158,11,0.4)] rounded-lg">
-            <SelectValue className="truncate">{selectedDifficultyLabel}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {difficultyOptions.map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.value === 'custom' && <FileText className="w-3 h-3 inline mr-1" />}
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs uppercase tracking-wide font-semibold text-muted-foreground px-1">Difficulty</span>
+          <Select value={difficulty} onValueChange={handleDifficultySelect} disabled={disabled}>
+            <SelectTrigger className="h-11 w-[120px] min-w-0 overflow-hidden border-2 border-amber-400/50 bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(245,158,11,0.25)] hover:shadow-[0_0_0_3px_rgba(245,158,11,0.4)] rounded-lg">
+              <SelectValue className="truncate">{selectedDifficultyLabel}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {difficultyOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.value === 'custom' && <FileText className="w-3 h-3 inline mr-1" />}
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Separator */}
-        <div className="w-px h-8 bg-border" />
+        <div className="w-px h-11 bg-border self-end" />
 
         {/* Language */}
-        <Select value={language} onValueChange={(value) => onLanguageChange(value as Language)} disabled={disabled}>
-          <SelectTrigger className="h-11 w-[140px] min-w-0 overflow-hidden border-2 border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-500/15 via-purple-500/15 to-violet-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(217,70,239,0.25)] hover:shadow-[0_0_0_3px_rgba(217,70,239,0.4)] rounded-lg">
-            <SelectValue className="truncate">{selectedLanguageLabel}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {languageOptions.map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs uppercase tracking-wide font-semibold text-muted-foreground px-1">Language</span>
+          <Select value={language} onValueChange={(value) => onLanguageChange(value as Language)} disabled={disabled}>
+            <SelectTrigger className="h-11 w-[120px] min-w-0 overflow-hidden border-2 border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-500/15 via-purple-500/15 to-violet-500/15 text-foreground text-sm font-medium px-4 py-2 shadow-[0_0_0_2px_rgba(217,70,239,0.25)] hover:shadow-[0_0_0_3px_rgba(217,70,239,0.4)] rounded-lg">
+              <SelectValue className="truncate">{selectedLanguageLabel}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {languageOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Separator */}
-        <div className="w-px h-8 bg-border" />
+        <div className="w-px h-11 bg-border self-end" />
 
         {/* Challenge */}
-        <ChallengeDropdown 
-          settings={challengeSettings}
-          onChange={onChallengeChange}
-          disabled={disabled}
-        />
+        <div className="flex flex-col gap-1">
+          <span className="text-xs uppercase tracking-wide font-semibold text-muted-foreground px-1">Challenges</span>
+          <ChallengeDropdown 
+            settings={challengeSettings}
+            onChange={onChallengeChange}
+            disabled={disabled}
+          />
+        </div>
       </div>
 
       {/* Custom Text Dialog */}

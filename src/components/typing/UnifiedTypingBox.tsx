@@ -4,6 +4,14 @@ import { toast } from 'sonner';
 import Sanscript from '@indic-transliteration/sanscript';
 import { Language } from '@/hooks/useTypingTest';
 
+export interface TestConfigInfo {
+  duration: number;
+  mode: string;
+  difficulty: string;
+  language: string;
+  activeChallenge: string | null;
+}
+
 interface UnifiedTypingBoxProps {
   promptText: string;
   inputValue: string;
@@ -14,6 +22,7 @@ interface UnifiedTypingBoxProps {
   highlightWord?: boolean;
   onNewPrompt: () => void;
   language?: Language;
+  testConfig?: TestConfigInfo;
 }
 
 const UnifiedTypingBox = ({
@@ -25,7 +34,8 @@ const UnifiedTypingBox = ({
   testCompleted,
   highlightWord = false,
   onNewPrompt,
-  language = 'english'
+  language = 'english',
+  testConfig
 }: UnifiedTypingBoxProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -298,14 +308,14 @@ const UnifiedTypingBox = ({
       const absIdx = lineStart + idx;
       const typed = inputValue[absIdx];
       
-      let cls = 'text-gray-400'; // untyped - soft gray
+      let cls = 'char text-gray-400'; // untyped - soft gray
       let style = {};
       
       if (absIdx < inputValue.length) {
         if (typed === char) {
-          cls = 'text-cyan-300'; // Correct - light cyan
+          cls = 'char text-cyan-300 typed correct'; // Correct - light cyan
         } else {
-          cls = 'text-red-300'; // Wrong - muted red
+          cls = 'char text-red-300 typed error'; // Wrong - muted red
           // Rounded underline for error (instead of background)
           style = {
             textDecoration: 'underline wavy',
@@ -323,7 +333,7 @@ const UnifiedTypingBox = ({
         <span key={idx} className={`${cls} relative`} style={style}>
           {isCursor && (
             <span 
-              className="absolute left-0 top-0 w-[2px] h-full rounded-full"
+              className="cursor absolute left-0 top-0 w-[2px] h-full rounded-full"
               style={{
                 background: 'radial-gradient(circle, #06b6d4 0%, #06b6d4 40%, transparent 70%)',
                 boxShadow: '0 0 8px rgba(6, 182, 212, 0.8)',
@@ -338,12 +348,12 @@ const UnifiedTypingBox = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 typing-wrapper">
       {/* Fixed 3-line typing box */}
       <div
         ref={containerRef}
         onClick={() => inputRef.current?.focus()}
-        className={`relative cursor-text rounded-xl ${
+        className={`relative cursor-text rounded-xl text-container ${
           isFocused ? 'ring-2 ring-cyan-500/40' : ''
         }`}
         style={{
@@ -364,7 +374,7 @@ const UnifiedTypingBox = ({
         }}
       >
         <div
-          className="select-none"
+          className="select-none typing-text"
           style={{
             fontFamily: "'JetBrains Mono', 'ui-monospace', monospace",
             fontSize: '21px',
@@ -385,11 +395,16 @@ const UnifiedTypingBox = ({
             const lineStart = visibleStartChar + 
               visibleLines.lines.slice(0, idx).reduce((a, l) => a + l.length + 1, 0);
             
+            // Determine if this is the active line (where cursor is)
+            const cursorPos = inputValue.length;
+            const lineEnd = lineStart + (line?.length || 0);
+            const isActiveLine = cursorPos >= lineStart && cursorPos <= lineEnd;
+            
             // Always render the line container, even if empty
             return (
               <div 
                 key={currentLineIndex + idx} 
-                className="whitespace-pre" 
+                className={`whitespace-pre line ${isActiveLine ? 'active' : ''}`}
                 style={{ 
                   minHeight: `${lineHeightPx}px`,
                   height: `${lineHeightPx}px`,
@@ -449,19 +464,70 @@ const UnifiedTypingBox = ({
           rows={1}
         />
 
-        {!testStarted && inputValue.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl backdrop-blur-sm pointer-events-none">
-            <div className="text-center">
+        {/* Pre-test: All Challenges Showcase - only before Start Test */}
+        {!testStarted && !testReady && inputValue.length === 0 && (
+          <div className="absolute inset-0 flex flex-col rounded-xl pointer-events-none z-10 overflow-hidden" style={{background: 'linear-gradient(135deg, rgba(8,12,21,0.95) 0%, rgba(10,18,36,0.92) 50%, rgba(8,12,21,0.95) 100%)'}}>
+            
+            {/* Header */}
+            <div className="text-center pt-3 pb-2 px-4 flex-shrink-0">
+              <h3 className="text-sm font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent tracking-wide uppercase">
+                ⚡ 25 Typing Challenges
+              </h3>
+              <p className="text-[10px] text-gray-500 mt-0.5">Pick one from the dropdown above & level up your skills</p>
+            </div>
+
+            {/* Scrolling challenges grid */}
+            <div className="flex-1 overflow-hidden relative px-3 pb-2">
+              <div className="challenge-scroll-container grid grid-cols-5 gap-1.5 auto-rows-min" style={{animation: 'challengeScroll 20s linear infinite'}}>
+                {[
+                  { emoji: '📝', name: 'One Line', color: 'from-purple-500/20 to-purple-900/20', border: 'border-purple-500/30', text: 'text-purple-300' },
+                  { emoji: '🔦', name: 'Focus Strip', color: 'from-cyan-500/20 to-cyan-900/20', border: 'border-cyan-500/30', text: 'text-cyan-300' },
+                  { emoji: '🧘', name: 'Calm Mode', color: 'from-green-500/20 to-green-900/20', border: 'border-green-500/30', text: 'text-green-300' },
+                  { emoji: '👻', name: 'Ghost Text', color: 'from-gray-500/20 to-gray-900/20', border: 'border-gray-500/30', text: 'text-gray-300' },
+                  { emoji: '🚫', name: 'No Backspace', color: 'from-red-500/20 to-red-900/20', border: 'border-red-500/30', text: 'text-red-300' },
+                  { emoji: '🧊', name: 'Error Freeze', color: 'from-sky-500/20 to-sky-900/20', border: 'border-sky-500/30', text: 'text-sky-300' },
+                  { emoji: '🔒', name: 'Speed Lock', color: 'from-emerald-500/20 to-emerald-900/20', border: 'border-emerald-500/30', text: 'text-emerald-300' },
+                  { emoji: '💀', name: 'Last Chance', color: 'from-yellow-500/20 to-yellow-900/20', border: 'border-yellow-500/30', text: 'text-yellow-300' },
+                  { emoji: '🔄', name: 'Reverse', color: 'from-violet-500/20 to-violet-900/20', border: 'border-violet-500/30', text: 'text-violet-300' },
+                  { emoji: '🔀', name: 'Word Shuffle', color: 'from-pink-500/20 to-pink-900/20', border: 'border-pink-500/30', text: 'text-pink-300' },
+                  { emoji: '💫', name: 'Sudden Shift', color: 'from-orange-500/20 to-orange-900/20', border: 'border-orange-500/30', text: 'text-orange-300' },
+                  { emoji: '✨', name: 'Vanishing', color: 'from-slate-500/20 to-slate-900/20', border: 'border-slate-500/30', text: 'text-slate-300' },
+                  { emoji: '🧠', name: 'Memory', color: 'from-indigo-500/20 to-indigo-900/20', border: 'border-indigo-500/30', text: 'text-indigo-300' },
+                  { emoji: '🙈', name: 'Blind Start', color: 'from-amber-500/20 to-amber-900/20', border: 'border-amber-500/30', text: 'text-amber-300' },
+                  { emoji: '🪞', name: 'Mirror', color: 'from-fuchsia-500/20 to-fuchsia-900/20', border: 'border-fuchsia-500/30', text: 'text-fuchsia-300' },
+                  { emoji: '🎯', name: 'Moving Target', color: 'from-orange-500/20 to-red-900/20', border: 'border-orange-500/30', text: 'text-orange-300' },
+                  { emoji: '🔥', name: 'Turbo End', color: 'from-red-500/20 to-orange-900/20', border: 'border-red-500/30', text: 'text-red-300' },
+                  { emoji: '⏳', name: 'Pressure', color: 'from-amber-500/20 to-red-900/20', border: 'border-amber-500/30', text: 'text-amber-300' },
+                  { emoji: '💪', name: 'Stamina', color: 'from-emerald-500/20 to-teal-900/20', border: 'border-emerald-500/30', text: 'text-emerald-300' },
+                  { emoji: '🔐', name: 'Encryption', color: 'from-purple-500/20 to-indigo-900/20', border: 'border-purple-500/30', text: 'text-purple-300' },
+                  { emoji: '🎧', name: 'Podcast', color: 'from-blue-500/20 to-indigo-900/20', border: 'border-blue-500/30', text: 'text-blue-300' },
+                  { emoji: '✍️', name: 'Prompt Craft', color: 'from-teal-500/20 to-green-900/20', border: 'border-teal-500/30', text: 'text-teal-300' },
+                  { emoji: '🤖', name: 'AI Heatmap', color: 'from-blue-500/20 to-cyan-900/20', border: 'border-blue-500/30', text: 'text-blue-300' },
+                  { emoji: '👤', name: 'Ghost Race', color: 'from-slate-500/20 to-gray-900/20', border: 'border-slate-500/30', text: 'text-slate-300' },
+                  { emoji: '☠️', name: 'Hardcore', color: 'from-red-600/20 to-red-950/20', border: 'border-red-600/30', text: 'text-red-400' },
+                ].map((c, i) => (
+                  <div key={i} className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg bg-gradient-to-b ${c.color} border ${c.border} transition-all hover:scale-105`} style={{animationDelay: `${i * 0.05}s`}}>
+                    <span className="text-base leading-none">{c.emoji}</span>
+                    <span className={`text-[9px] font-medium mt-0.5 ${c.text} whitespace-nowrap`}>{c.name}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Bottom fade */}
+              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[rgba(8,12,21,1)] to-transparent pointer-events-none"></div>
+            </div>
+
+            {/* Bottom CTA */}
+            <div className="text-center pb-2.5 pt-1 flex-shrink-0">
               {testReady ? (
-                <>
-                  <p className="text-green-400 text-lg font-semibold mb-1 animate-pulse">⌨️ Start Typing Now!</p>
-                  <p className="text-gray-400 text-xs">Timer starts on your first keystroke</p>
-                </>
+                <div className="inline-flex items-center gap-2 bg-green-500/15 border border-green-500/30 px-4 py-1 rounded-full animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-green-400 animate-ping"></span>
+                  <span className="text-green-400 text-[11px] font-semibold">GO! Start typing now...</span>
+                </div>
               ) : (
-                <>
-                  <p className="text-cyan-400 text-lg font-semibold mb-1">⌨️ Start Typing to Begin</p>
-                  <p className="text-gray-400 text-xs">Click "Start Test" button first</p>
-                </>
+                <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                  <span className="text-gray-400 text-[11px]">Click "Start Test" to begin</span>
+                </div>
               )}
             </div>
           </div>

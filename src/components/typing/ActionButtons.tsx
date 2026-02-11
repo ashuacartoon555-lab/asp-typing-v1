@@ -63,7 +63,7 @@ const ActionButtons = ({ testStarted, testReady, testCompleted, onStart, onReset
       <div className="w-full text-center text-muted-foreground text-sm mt-2">
         <p className="text-xs opacity-80">
           {!testStarted && !testReady && !testCompleted ? (
-            <>⏱️ Click 'Start Test' button, then timer starts on your first keystroke • Shortcuts: Alt+S (Start) • Alt+R (Reset)</>
+            <>• Shortcuts: Alt+S (Start) • Alt+R (Reset)</>
           ) : testReady && !testStarted && !testCompleted ? (
             <>⌨️ Start typing now! Timer will begin automatically on your first keystroke • Alt+R (Reset)</>
           ) : testStarted && !testCompleted ? (

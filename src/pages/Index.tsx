@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import React from 'react';
 import Header from '@/components/typing/Header';
 import PageHeader from '@/components/typing/PageHeader';
@@ -53,16 +53,16 @@ const Index = () => {
   const { playSound } = useSound();
 
   // Display mode toggles
-  const [highlightWord, setHighlightWord] = React.useState(false);
+  const [highlightWord, setHighlightWord] = useState(false);
 
   // Challenge modes state
-  const [challengeSettings, setChallengeSettings] = React.useState<ChallengeSettings>(defaultChallengeSettings);
+  const [challengeSettings, setChallengeSettings] = useState<ChallengeSettings>(defaultChallengeSettings);
 
   // Toast notification state
-  const [toast, setToast] = React.useState<{message: string; type: 'error' | 'success' | 'warning'} | null>(null);
+  const [toast, setToast] = useState<{message: string; type: 'error' | 'success' | 'warning'} | null>(null);
 
   // Simulated active users count for post-test remark banner
-  const [activeUsersCount, setActiveUsersCount] = React.useState<number | null>(null);
+  const [activeUsersCount, setActiveUsersCount] = useState<number | null>(null);
 
   // Challenge mode hook integration
   const challengeMode = useChallengeMode({
@@ -96,12 +96,16 @@ const Index = () => {
         finishTest();
         showChallengeToast('❌ Challenge Failed: Too many errors (Last Chance mode)', 'error');
       }
+      if (challengeMode.hasHardcoreFailed) {
+        finishTest();
+        showChallengeToast('💀 HARDCORE FAILED: One mistake = Game Over!', 'error');
+      }
       if (challengeMode.isSpeedLockFailed) {
         finishTest();
         showChallengeToast('❌ Challenge Failed: Speed too low - maintain 30+ WPM (Speed Lock mode)', 'error');
       }
     }
-  }, [challengeMode.hasExceededErrorLimit, challengeMode.isSpeedLockFailed, testStarted, finishTest, showChallengeToast]);
+  }, [challengeMode.hasExceededErrorLimit, challengeMode.hasHardcoreFailed, challengeMode.isSpeedLockFailed, testStarted, finishTest, showChallengeToast]);
 
   // Warning sounds for approaching limits
   useEffect(() => {
@@ -159,8 +163,14 @@ const Index = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  // Generate CSS classes for active challenges
+  const activeChallengeClasses = Object.entries(challengeSettings)
+    .filter(([_, isActive]) => isActive)
+    .map(([key]) => `challenge-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`)
+    .join(' ');
+
   return (
-    <div className="min-h-screen min-h-[100dvh] flex flex-col relative overflow-x-hidden">
+    <div className={`min-h-screen min-h-[100dvh] flex flex-col relative overflow-x-hidden ${activeChallengeClasses}`}>
       <DynamicBackground />
 
       <Header />
@@ -197,40 +207,37 @@ const Index = () => {
         {!testStarted && !testReady && !testCompleted && (
           <div className="glass p-3 sm:p-5 rounded-xl sm:rounded-2xl mb-3 space-y-3">
             <div className="text-center mb-2">
-              <h2 className="text-lg sm:text-xl font-bold text-foreground mb-1">
-                ⚙️ Configure Your Test
+              <h2 className="text-lg sm:text-xl font-bold text-foreground mb-1 flex items-center justify-center gap-2">
+                <span>⚙️</span> Configure Your Test
               </h2>
               <p className="text-muted-foreground text-xs sm:text-sm">
                 Select your settings, then click <span className="text-primary font-semibold">Start Test</span> button below
               </p>
             </div>
-            
-            <Options 
-              totalTime={totalTime}
+            <Options
               difficulty={difficulty}
-              customText={customText}
-              testMode={testMode}
-              language={language}
-              challengeSettings={challengeSettings}
-              onTimeChange={setTotalTime}
               onDifficultyChange={setDifficulty}
+              totalTime={totalTime}
+              onTimeChange={setTotalTime}
+              customText={customText}
               onCustomTextChange={setCustomText}
+              testMode={testMode}
               onTestModeChange={setTestMode}
+              language={language}
               onLanguageChange={setLanguage}
+              challengeSettings={challengeSettings}
               onChallengeChange={setChallengeSettings}
-              disabled={false}
             />
             
-            <div className="pt-2 border-t border-border/30">
-              <ActionButtons 
-                testStarted={testStarted}
-                testReady={testReady}
-                testCompleted={testCompleted}
-                onStart={startTest}
-                onReset={resetTest}
-                onFinish={finishTest}
-              />
-            </div>
+            {/* Start Test & Reset Test Buttons - Inside config panel */}
+            <ActionButtons 
+              testStarted={testStarted}
+              testReady={testReady}
+              testCompleted={testCompleted}
+              onStart={startTest}
+              onReset={resetTest}
+              onFinish={finishTest}
+            />
           </div>
         )}
 
@@ -335,10 +342,22 @@ const Index = () => {
                       <span>Mirror Mode - Mirrored text display</span>
                     </div>
                   )}
-                  {challengeSettings.rhythmMode && (
+                  {challengeSettings.hardcoreMode && (
                     <div className="flex items-center gap-2">
-                      <span className="text-fuchsia-500">🎵</span>
-                      <span>Rhythm Mode - Maintain steady typing pace</span>
+                      <span className="text-red-500">💀</span>
+                      <span>Hardcore Mode - One mistake = Game Over</span>
+                    </div>
+                  )}
+                  {challengeSettings.encryption && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-cyan-500">🔐</span>
+                      <span>Encryption - Text displayed as symbols</span>
+                    </div>
+                  )}
+                  {challengeSettings.movingTarget && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-yellow-500">🎯</span>
+                      <span>Moving Target - Text box floats around</span>
                     </div>
                   )}
                   {challengeSettings.staminaMode && (
@@ -365,6 +384,27 @@ const Index = () => {
               highlightWord={highlightWord}
               onNewPrompt={loadNewPrompt}
               language={language}
+              testConfig={{
+                duration: totalTime,
+                mode: testMode,
+                difficulty: difficulty,
+                language: language,
+                activeChallenge: (() => {
+                  const challengeNames: Record<string, string> = {
+                    oneLineOnly: 'One Line Only', focusStrip: 'Focus Strip', calmMode: 'Calm Mode',
+                    ghostText: 'Ghost Text', noBackspace: 'No Backspace', errorFreeze: 'Error Freeze',
+                    speedLock: 'Speed Lock', lastChance: 'Last Chance', reverseWords: 'Reverse Words',
+                    wordShuffle: 'Word Shuffle', suddenShift: 'Sudden Shift', vanishingWords: 'Vanishing Words',
+                    memoryMode: 'Memory Mode', blindStart: 'Blind Start', mirrorMode: 'Mirror Mode',
+                    movingTarget: 'Moving Target', turboEnd: 'Turbo End', pressureMode: 'Pressure Mode',
+                    staminaMode: 'Stamina Mode', encryption: 'Encryption', podcastMode: 'Podcast Mode',
+                    promptCrafting: 'Prompt Crafting', aiHeatmap: 'AI Heatmap', ghostRacing: 'Ghost Racing',
+                    hardcoreMode: 'Hardcore Mode'
+                  };
+                  const active = Object.entries(challengeSettings).find(([_, v]) => v === true);
+                  return active ? challengeNames[active[0]] || active[0] : null;
+                })()
+              }}
             />
         </div>
 
@@ -401,55 +441,116 @@ const Index = () => {
           </div>
         )}
 
-        {/* Active Challenge Indicators */}
-        {testStarted && (
+        {/* Live Test Info Strip - Always visible during test */}
+        {testStarted && !testCompleted && (
           <div className="mb-4">
-            {Object.entries(challengeSettings).filter(([_, value]) => value === true).length > 0 && (
-              <div className="glass p-3 rounded-xl">
-                <div className="flex flex-wrap gap-2">
-                  {challengeSettings.noBackspace && (
-                    <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-medium">
-                      🚫 No Backspace
-                    </span>
-                  )}
-                  {challengeSettings.errorFreeze && challengeMode.isErrorFreeze && (
-                    <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-medium animate-pulse">
-                      ❄️ Frozen - Fix Error!
-                    </span>
-                  )}
-                  {challengeSettings.lastChance && (
-                    <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-medium">
-                      ⚠️ Last Chance ({3 - errors} left)
-                    </span>
-                  )}
-                  {challengeSettings.speedLock && (
-                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-medium">
-                      🔒 Speed Lock (min 30 WPM)
-                    </span>
-                  )}
-                  {challengeSettings.turboEnd && challengeMode.getTurboMultiplier() > 1 && (
-                    <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-medium animate-pulse">
-                      ⚡ TURBO MODE ACTIVE!
-                    </span>
-                  )}
-                  {challengeSettings.calmMode && (
-                    <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">
-                      🧘 Calm Mode
-                    </span>
-                  )}
-                  {challengeSettings.memoryMode && (
-                    <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-medium">
-                      🧠 Memory Mode
-                    </span>
-                  )}
-                  {challengeSettings.mirrorMode && (
-                    <span className="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full text-xs font-medium">
-                      🪞 Mirror Mode
-                    </span>
-                  )}
-                </div>
+            <div className="glass p-3 rounded-xl">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Current config chips */}
+                <span className="px-2.5 py-1 bg-blue-500/15 border border-blue-500/25 text-blue-300 rounded-full text-[11px] font-medium flex items-center gap-1">
+                  ⏱ {totalTime}s
+                </span>
+                <span className="px-2.5 py-1 bg-purple-500/15 border border-purple-500/25 text-purple-300 rounded-full text-[11px] font-medium flex items-center gap-1 capitalize">
+                  📊 {difficulty}
+                </span>
+                <span className="px-2.5 py-1 bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 rounded-full text-[11px] font-medium flex items-center gap-1 capitalize">
+                  🌐 {language}
+                </span>
+                <span className="px-2.5 py-1 bg-amber-500/15 border border-amber-500/25 text-amber-300 rounded-full text-[11px] font-medium flex items-center gap-1 capitalize">
+                  ⚡ {testMode}
+                </span>
+
+                {/* Separator if challenge active */}
+                {Object.entries(challengeSettings).some(([_, v]) => v === true) && (
+                  <span className="text-gray-600 text-xs">|</span>
+                )}
+
+                {/* Active challenge badges */}
+                {challengeSettings.oneLineOnly && (
+                  <span className="px-2.5 py-1 bg-violet-500/20 text-violet-300 rounded-full text-[11px] font-medium animate-pulse">📝 One Line Only</span>
+                )}
+                {challengeSettings.focusStrip && (
+                  <span className="px-2.5 py-1 bg-cyan-500/20 text-cyan-300 rounded-full text-[11px] font-medium">🔦 Focus Strip</span>
+                )}
+                {challengeSettings.calmMode && (
+                  <span className="px-2.5 py-1 bg-green-500/20 text-green-300 rounded-full text-[11px] font-medium">🧘 Calm Mode</span>
+                )}
+                {challengeSettings.ghostText && (
+                  <span className="px-2.5 py-1 bg-gray-500/20 text-gray-300 rounded-full text-[11px] font-medium">👻 Ghost Text</span>
+                )}
+                {challengeSettings.noBackspace && (
+                  <span className="px-2.5 py-1 bg-red-500/20 text-red-300 rounded-full text-[11px] font-medium">🚫 No Backspace</span>
+                )}
+                {challengeSettings.errorFreeze && (
+                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-medium ${challengeMode.isErrorFreeze ? 'bg-red-500/30 text-red-300 animate-pulse' : 'bg-sky-500/20 text-sky-300'}`}>
+                    🧊 {challengeMode.isErrorFreeze ? 'FROZEN!' : 'Error Freeze'}
+                  </span>
+                )}
+                {challengeSettings.speedLock && (
+                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-medium ${wpm < 30 && currentTime > 5 ? 'bg-red-500/30 text-red-300 animate-pulse' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                    🔒 Speed Lock {wpm < 30 && currentTime > 5 ? '⚠️' : `(${wpm} WPM)`}
+                  </span>
+                )}
+                {challengeSettings.lastChance && (
+                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-medium ${errors >= 2 ? 'bg-red-500/30 text-red-300 animate-pulse' : 'bg-yellow-500/20 text-yellow-300'}`}>
+                    💀 Last Chance ({3 - errors} left)
+                  </span>
+                )}
+                {challengeSettings.reverseWords && (
+                  <span className="px-2.5 py-1 bg-violet-500/20 text-violet-300 rounded-full text-[11px] font-medium">🔄 Reverse</span>
+                )}
+                {challengeSettings.wordShuffle && (
+                  <span className="px-2.5 py-1 bg-pink-500/20 text-pink-300 rounded-full text-[11px] font-medium">🔀 Word Shuffle</span>
+                )}
+                {challengeSettings.suddenShift && (
+                  <span className="px-2.5 py-1 bg-orange-500/20 text-orange-300 rounded-full text-[11px] font-medium">💫 Sudden Shift</span>
+                )}
+                {challengeSettings.vanishingWords && (
+                  <span className="px-2.5 py-1 bg-slate-500/20 text-slate-300 rounded-full text-[11px] font-medium">✨ Vanishing</span>
+                )}
+                {challengeSettings.memoryMode && (
+                  <span className="px-2.5 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-[11px] font-medium">🧠 Memory Mode</span>
+                )}
+                {challengeSettings.blindStart && (
+                  <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 rounded-full text-[11px] font-medium">🙈 Blind Start</span>
+                )}
+                {challengeSettings.mirrorMode && (
+                  <span className="px-2.5 py-1 bg-fuchsia-500/20 text-fuchsia-300 rounded-full text-[11px] font-medium">🪞 Mirror</span>
+                )}
+                {challengeSettings.movingTarget && (
+                  <span className="px-2.5 py-1 bg-orange-500/20 text-orange-300 rounded-full text-[11px] font-medium">🎯 Moving Target</span>
+                )}
+                {challengeSettings.turboEnd && (
+                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-medium ${challengeMode.getTurboMultiplier() > 1 ? 'bg-red-500/30 text-red-300 animate-pulse' : 'bg-orange-500/20 text-orange-300'}`}>
+                    🔥 {challengeMode.getTurboMultiplier() > 1 ? 'TURBO ACTIVE!' : 'Turbo End'}
+                  </span>
+                )}
+                {challengeSettings.pressureMode && (
+                  <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 rounded-full text-[11px] font-medium">⏳ Pressure</span>
+                )}
+                {challengeSettings.staminaMode && (
+                  <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-[11px] font-medium">💪 Stamina</span>
+                )}
+                {challengeSettings.encryption && (
+                  <span className="px-2.5 py-1 bg-purple-500/20 text-purple-300 rounded-full text-[11px] font-medium">🔐 Encryption</span>
+                )}
+                {challengeSettings.podcastMode && (
+                  <span className="px-2.5 py-1 bg-blue-500/20 text-blue-300 rounded-full text-[11px] font-medium">🎧 Podcast</span>
+                )}
+                {challengeSettings.promptCrafting && (
+                  <span className="px-2.5 py-1 bg-teal-500/20 text-teal-300 rounded-full text-[11px] font-medium">✍️ Prompt Craft</span>
+                )}
+                {challengeSettings.aiHeatmap && (
+                  <span className="px-2.5 py-1 bg-blue-500/20 text-blue-300 rounded-full text-[11px] font-medium">🤖 AI Heatmap</span>
+                )}
+                {challengeSettings.ghostRacing && (
+                  <span className="px-2.5 py-1 bg-slate-500/20 text-slate-300 rounded-full text-[11px] font-medium">👤 Ghost Race</span>
+                )}
+                {challengeSettings.hardcoreMode && (
+                  <span className="px-2.5 py-1 bg-red-600/20 text-red-400 rounded-full text-[11px] font-medium animate-pulse">☠️ Hardcore</span>
+                )}
               </div>
-            )}
+            </div>
           </div>
         )}
 

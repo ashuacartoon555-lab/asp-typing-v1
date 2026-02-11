@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { ChallengeSettings } from '@/components/typing/ChallengeDropdown';
 
 interface UseChallengeMode {
@@ -13,6 +13,16 @@ interface UseChallengeMode {
   playSound?: (type: 'error' | 'challenge-warning') => void;
 }
 
+// Encryption map for displaying symbols instead of letters
+const encryptionMap: { [key: string]: string } = {
+  'a': 'α', 'b': 'β', 'c': 'γ', 'd': 'δ', 'e': 'ε',
+  'f': 'φ', 'g': 'ψ', 'h': 'η', 'i': 'ι', 'j': 'θ',
+  'k': 'κ', 'l': 'λ', 'm': 'μ', 'n': 'ν', 'o': 'ο',
+  'p': 'π', 'q': 'ω', 'r': 'ρ', 's': 'σ', 't': 'τ',
+  'u': 'υ', 'v': 'ξ', 'w': 'ς', 'x': 'χ', 'y': 'ψ',
+  'z': 'ζ', ' ': ' '
+};
+
 export function useChallengeMode({
   settings,
   testStarted,
@@ -26,6 +36,8 @@ export function useChallengeMode({
 }: UseChallengeMode) {
   const lastErrorCountRef = useRef(0);
   const shakeIntensityRef = useRef(0);
+  const [memoryModeHidden, setMemoryModeHidden] = useState(false);
+  const [suddenShiftStyle, setSuddenShiftStyle] = useState<{ fontSize: string; textTransform: string }>({ fontSize: '1.5rem', textTransform: 'none' });
 
   // NO BACKSPACE - Block backspace key
   useEffect(() => {
@@ -41,11 +53,44 @@ export function useChallengeMode({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [settings.noBackspace, testStarted]);
 
+  // MEMORY MODE - Hide text after 5 seconds
+  useEffect(() => {
+    if (!settings.memoryMode || !testStarted) {
+      setMemoryModeHidden(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setMemoryModeHidden(true);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [settings.memoryMode, testStarted]);
+
+  // SUDDEN SHIFT - Change font size and case every 3 seconds
+  useEffect(() => {
+    if (!settings.suddenShift || !testStarted) {
+      setSuddenShiftStyle({ fontSize: '1.5rem', textTransform: 'none' });
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const fontSizes = ['1rem', '1.25rem', '1.5rem', '1.75rem', '2rem'];
+      const textTransforms = ['none', 'uppercase', 'lowercase'];
+      
+      setSuddenShiftStyle({
+        fontSize: fontSizes[Math.floor(Math.random() * fontSizes.length)],
+        textTransform: textTransforms[Math.floor(Math.random() * textTransforms.length)]
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [settings.suddenShift, testStarted]);
+
   // ERROR FREEZE - Can't type until error is fixed
   const isErrorFreeze = useCallback(() => {
     if (!settings.errorFreeze || !testStarted) return false;
     
-    const currentChar = promptText[inputValue.length];
     const lastTypedChar = inputValue[inputValue.length - 1];
     const expectedChar = promptText[inputValue.length - 1];
     
@@ -56,6 +101,11 @@ export function useChallengeMode({
   const hasExceededErrorLimit = useCallback(() => {
     return settings.lastChance && errors >= 3;
   }, [settings.lastChance, errors]);
+
+  // HARDCORE MODE - Test fails after 1 error
+  const hasHardcoreFailed = useCallback(() => {
+    return settings.hardcoreMode && errors >= 1;
+  }, [settings.hardcoreMode, errors]);
 
   // SPEED LOCK - Must maintain minimum WPM
   const isSpeedLockFailed = useCallback(() => {
@@ -73,7 +123,7 @@ export function useChallengeMode({
 
     if (errors > lastErrorCountRef.current) {
       shakeIntensityRef.current = Math.min(errors * 2, 20);
-      document.body.style.animation = `shake 0.5s ease-in-out`;
+      document.body.classList.add('shake');
       
       // Play error sound with pressure mode
       if (playSound) {
@@ -81,9 +131,9 @@ export function useChallengeMode({
       }
       
       setTimeout(() => {
-        document.body.style.animation = '';
+        document.body.classList.remove('shake');
         shakeIntensityRef.current = 0;
-      }, 500);
+      }, 400);
     }
     
     lastErrorCountRef.current = errors;
@@ -100,13 +150,19 @@ export function useChallengeMode({
     return 1;
   }, [settings.turboEnd, testStarted, currentTime, totalTime]);
 
-  // REVERSE WORDS - Reverse the prompt text
+  // REVERSE WORDS - Reverse each word's characters
   const transformPromptText = useCallback((text: string): string => {
     if (settings.reverseWords) {
-      return text.split(' ').reverse().join(' ');
+      return text.split(' ').map(word => word.split('').reverse().join('')).join(' ');
     }
     return text;
   }, [settings.reverseWords]);
+
+  // ENCRYPTION - Convert text to symbols
+  const encryptText = useCallback((text: string): string => {
+    if (!settings.encryption) return text;
+    return text.toLowerCase().split('').map(char => encryptionMap[char] || char).join('');
+  }, [settings.encryption]);
 
   // MIRROR MODE - Flip text horizontally
   const getMirrorStyle = useCallback((): React.CSSProperties => {
@@ -135,14 +191,10 @@ export function useChallengeMode({
   // CALM MODE - Hide timer and stats
   const shouldHideTimer = settings.calmMode && testStarted;
 
-  // MEMORY MODE - Hide text after 5 seconds
-  const shouldHideText = useCallback((): boolean => {
-    if (!settings.memoryMode || !testStarted) return false;
-    // This would need to track time since test start
-    return false; // Placeholder - implement with timer
-  }, [settings.memoryMode, testStarted]);
+  // MOVING TARGET - Text box moves around
+  const shouldMoveTarget = settings.movingTarget && testStarted;
 
-  // BLIND START - Hide text for first 10 seconds
+  // BLIND START - Blur first few lines
   const shouldBlindStart = useCallback((): boolean => {
     if (!settings.blindStart || !testStarted) return false;
     const elapsed = totalTime - currentTime;
@@ -152,6 +204,21 @@ export function useChallengeMode({
   // VANISHING WORDS - Completed words disappear
   const shouldVanishWords = settings.vanishingWords && testStarted;
 
+  // WORD SHUFFLE - Shuffle remaining words periodically
+  const shouldWordShuffle = settings.wordShuffle && testStarted;
+
+  // PROMPT CRAFTING - Terminal style UI
+  const shouldUsePromptCrafting = settings.promptCrafting && testStarted;
+
+  // PODCAST MODE - Audio-based typing
+  const shouldUsePodcastMode = settings.podcastMode && testStarted;
+
+  // AI HEATMAP - Show keyboard heatmap
+  const shouldShowAiHeatmap = settings.aiHeatmap && testStarted;
+
+  // GHOST RACING - Race against personal best
+  const shouldShowGhostRacing = settings.ghostRacing && testStarted;
+
   // STAMINA MODE - Enforce minimum time
   const isStaminaMode = settings.staminaMode;
   const minimumStaminaTime = 300; // 5 minutes
@@ -160,20 +227,30 @@ export function useChallengeMode({
     // State checks
     isErrorFreeze: isErrorFreeze(),
     hasExceededErrorLimit: hasExceededErrorLimit(),
+    hasHardcoreFailed: hasHardcoreFailed(),
     isSpeedLockFailed: isSpeedLockFailed(),
     shouldShowOneLine,
     shouldUseFocusStrip,
     shouldHideTimer,
     shouldVanishWords,
+    shouldMoveTarget,
+    shouldWordShuffle,
+    shouldUsePromptCrafting,
+    shouldUsePodcastMode,
+    shouldShowAiHeatmap,
+    shouldShowGhostRacing,
     isStaminaMode,
     minimumStaminaTime,
+    memoryModeHidden,
+    suddenShiftStyle,
     
     // Functions
     getTurboMultiplier,
     transformPromptText,
+    encryptText,
     getMirrorStyle,
     getGhostTextOpacity,
-    shouldHideText: shouldHideText(),
+    shouldHideText: memoryModeHidden,
     shouldBlindStart: shouldBlindStart(),
   };
 }

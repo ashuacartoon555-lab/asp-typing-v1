@@ -15,139 +15,198 @@ const Analytics: React.FC = () => {
   const hasTests = history.length > 0;
   const improvementPercent = getImprovementPercent();
 
+  // Calculate extra stats
+  const avgTimePerTest = hasTests ? Math.round(stats.totalTimeSpent / stats.totalTests) : 0;
+  const totalMinutes = Math.round(stats.totalTimeSpent / 60);
+  const lastTest = hasTests ? history[history.length - 1] : null;
+  const bestAccuracy = hasTests ? Math.max(...history.map(t => t.accuracy)) : 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex flex-col">
       <Header />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
-        {/* Page Header with Stats Overview */}
+        
+        {/* Hero Header */}
         <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
-                📊 Your Typing Analytics
-              </h1>
-              <p className="text-slate-300 text-lg">
-                Track your progress, unlock achievements, and climb the leaderboard
-              </p>
-            </div>
-            {hasTests && (
-              <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl px-6 py-4 text-center shadow-lg border border-green-400">
-                <div className="text-3xl font-bold text-white">{stats.totalTests}</div>
-                <div className="text-green-100 text-sm font-semibold">Tests Completed</div>
-              </div>
-            )}
-          </div>
-
-          {/* Welcome Banner for Users with Tests */}
-          {hasTests && (
-            <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-xl p-6 shadow-xl border border-indigo-400 mb-6">
-              <div className="flex items-center gap-4">
-                <div className="text-5xl">👋</div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-white mb-2">
-                    Welcome Back, Typist! 
-                  </h2>
-                  <p className="text-white/90">
-                    You've typed <span className="font-bold text-yellow-300">{stats.totalWordsTyped.toLocaleString()}</span> words 
-                    with <span className="font-bold text-green-300">{stats.averageAccuracy}%</span> average accuracy. 
-                    Keep up the amazing work! 🚀
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900/80 via-purple-900/60 to-cyan-900/80 border border-indigo-500/20 p-6 sm:p-8">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+            
+            <div className="relative z-10">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div>
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2">
+                    <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+                      Your Typing Analytics
+                    </span>
+                  </h1>
+                  <p className="text-slate-300 text-sm sm:text-base max-w-xl">
+                    Track progress, unlock achievements, master challenges & climb the leaderboard
                   </p>
                 </div>
-                <div className="hidden lg:flex items-center gap-3">
-                  <div className="text-center bg-white/10 backdrop-blur rounded-lg p-3">
-                    <div className="text-2xl font-bold text-yellow-300">{stats.averageWPM}</div>
-                    <div className="text-xs text-white/80">Avg WPM</div>
+
+                {hasTests && (
+                  <div className="flex gap-3">
+                    <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl px-5 py-3 text-center min-w-[90px]">
+                      <div className="text-2xl font-bold text-cyan-400">{stats.totalTests}</div>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">Tests</div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl px-5 py-3 text-center min-w-[90px]">
+                      <div className="text-2xl font-bold text-purple-400">{stats.bestWPM}</div>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">Best WPM</div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl px-5 py-3 text-center min-w-[90px]">
+                      <div className="text-2xl font-bold text-emerald-400">{stats.averageAccuracy}%</div>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">Accuracy</div>
+                    </div>
                   </div>
-                  <div className="text-center bg-white/10 backdrop-blur rounded-lg p-3">
-                    <div className="text-2xl font-bold text-green-300">{stats.bestWPM}</div>
-                    <div className="text-xs text-white/80">Best WPM</div>
-                  </div>
-                </div>
+                )}
               </div>
+
+              {/* Quick stat pills */}
+              {hasTests && (
+                <div className="flex flex-wrap gap-2 mt-5">
+                  <span className="px-3 py-1 bg-blue-500/15 border border-blue-500/25 rounded-full text-[11px] text-blue-300 font-medium">
+                    ⏱ {totalMinutes} min total practice
+                  </span>
+                  <span className="px-3 py-1 bg-amber-500/15 border border-amber-500/25 rounded-full text-[11px] text-amber-300 font-medium">
+                    📝 {stats.totalWordsTyped.toLocaleString()} words typed
+                  </span>
+                  <span className="px-3 py-1 bg-emerald-500/15 border border-emerald-500/25 rounded-full text-[11px] text-emerald-300 font-medium">
+                    📊 {stats.averageWPM} avg WPM
+                  </span>
+                  {history.length >= 2 && (
+                    <span className={`px-3 py-1 rounded-full text-[11px] font-medium ${improvementPercent > 0 ? 'bg-green-500/15 border border-green-500/25 text-green-300' : improvementPercent < 0 ? 'bg-red-500/15 border border-red-500/25 text-red-300' : 'bg-gray-500/15 border border-gray-500/25 text-gray-300'}`}>
+                      {improvementPercent > 0 ? '📈' : improvementPercent < 0 ? '📉' : '➡️'} {improvementPercent > 0 ? '+' : ''}{improvementPercent}% improvement
+                    </span>
+                  )}
+                  <span className="px-3 py-1 bg-purple-500/15 border border-purple-500/25 rounded-full text-[11px] text-purple-300 font-medium">
+                    🎯 {bestAccuracy}% best accuracy
+                  </span>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {!hasTests ? (
           <div className="space-y-6">
-            {/* Empty State with More Info */}
-            <div className="bg-gradient-to-br from-blue-900 to-blue-800 rounded-xl p-8 border border-blue-700 text-center">
-              <div className="text-6xl mb-4">⌨️</div>
-              <h2 className="text-2xl font-bold text-white mb-2">No Tests Yet</h2>
-              <p className="text-blue-200 mb-6 max-w-md mx-auto">
-                Complete your first typing test to see your analytics, achievements, and progress tracking!
+            {/* Empty State */}
+            <div className="bg-gradient-to-br from-slate-900/80 to-slate-800/80 rounded-2xl p-10 border border-slate-700/50 text-center">
+              <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center">
+                <span className="text-4xl">⌨️</span>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Start Your Journey</h2>
+              <p className="text-slate-400 mb-6 max-w-md mx-auto text-sm">
+                Complete your first typing test to unlock analytics, achievements, progress tracking & more!
               </p>
               <a
                 href="/"
-                className="inline-block bg-white text-blue-900 font-bold py-3 px-8 rounded-lg hover:bg-blue-50 transition-all shadow-lg"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold py-3 px-8 rounded-xl hover:from-cyan-500 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/20"
               >
-                Start Typing Test →
+                <span>⚡</span> Start Typing Test
               </a>
             </div>
 
             {/* Features Preview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-purple-900 to-purple-800 rounded-xl p-6 border border-purple-700">
-                <div className="text-4xl mb-3">📈</div>
-                <h3 className="text-xl font-bold text-white mb-2">Track Progress</h3>
-                <p className="text-purple-200 text-sm">
-                  See your WPM improve over time with detailed charts and insights
-                </p>
+              <div className="bg-slate-900/60 rounded-xl p-5 border border-slate-700/50 hover:border-purple-500/30 transition-colors">
+                <div className="w-10 h-10 rounded-lg bg-purple-500/15 flex items-center justify-center mb-3">
+                  <span className="text-xl">📈</span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1">Track Progress</h3>
+                <p className="text-slate-400 text-xs">See your WPM improve over time with detailed charts and insights</p>
               </div>
-              <div className="bg-gradient-to-br from-orange-900 to-orange-800 rounded-xl p-6 border border-orange-700">
-                <div className="text-4xl mb-3">🏆</div>
-                <h3 className="text-xl font-bold text-white mb-2">Unlock Badges</h3>
-                <p className="text-orange-200 text-sm">
-                  Earn achievements as you reach milestones and improve skills
-                </p>
+              <div className="bg-slate-900/60 rounded-xl p-5 border border-slate-700/50 hover:border-amber-500/30 transition-colors">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/15 flex items-center justify-center mb-3">
+                  <span className="text-xl">🏆</span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1">Unlock Badges</h3>
+                <p className="text-slate-400 text-xs">Earn achievements as you reach milestones and improve skills</p>
               </div>
-              <div className="bg-gradient-to-br from-green-900 to-green-800 rounded-xl p-6 border border-green-700">
-                <div className="text-4xl mb-3">🔥</div>
-                <h3 className="text-xl font-bold text-white mb-2">Build Streaks</h3>
-                <p className="text-green-200 text-sm">
-                  Practice daily to maintain your typing streak and stay motivated
-                </p>
+              <div className="bg-slate-900/60 rounded-xl p-5 border border-slate-700/50 hover:border-emerald-500/30 transition-colors">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center mb-3">
+                  <span className="text-xl">🔥</span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1">Build Streaks</h3>
+                <p className="text-slate-400 text-xs">Practice daily to maintain your typing streak and stay motivated</p>
               </div>
+            </div>
+
+            {/* Challenge Preview */}
+            <div className="bg-slate-900/60 rounded-xl p-6 border border-slate-700/50">
+              <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                <span>⚡</span> 25 Typing Challenges Await
+              </h3>
+              <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                {['📝','🔦','🧘','👻','🚫','🧊','🔒','💀','🔄','🔀','💫','✨','🧠','🙈','🪞','🎯','🔥','⏳','💪','🔐','🎧','✍️','🤖','👤','☠️'].map((e, i) => (
+                  <div key={i} className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/5 border border-white/10 text-sm hover:scale-110 transition-transform">
+                    {e}
+                  </div>
+                ))}
+              </div>
+              <p className="text-slate-500 text-xs mt-3">Complete a test to start tracking challenge progress</p>
             </div>
           </div>
         ) : (
-          <div className="space-y-12">
+          <div className="space-y-8">
+
+            {/* Last Test Summary */}
+            {lastTest && (
+              <div className="bg-slate-900/60 rounded-xl p-5 border border-slate-700/50">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Last Test</h3>
+                  <span className="text-[10px] text-slate-500">
+                    {new Date(lastTest.date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <div className="text-xl font-bold text-cyan-400">{lastTest.wpm}</div>
+                    <div className="text-[10px] text-slate-500">WPM</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <div className="text-xl font-bold text-emerald-400">{lastTest.accuracy}%</div>
+                    <div className="text-[10px] text-slate-500">Accuracy</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <div className="text-xl font-bold text-amber-400">{lastTest.wordsTyped}</div>
+                    <div className="text-[10px] text-slate-500">Words</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <div className="text-xl font-bold text-purple-400">{Math.round(lastTest.timeElapsed)}s</div>
+                    <div className="text-[10px] text-slate-500">Time</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Personal Best Cards */}
             <section>
-              <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-2">
-                <span>⚡</span> Quick Stats
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-cyan-500/15 flex items-center justify-center text-sm">⚡</span> 
+                Quick Stats
               </h2>
               <PersonalBestCard />
-              
-              {/* Improvement % Line */}
-              {history.length >= 2 && (
-                <div className="mt-6 bg-gradient-to-r from-blue-900/50 via-purple-900/50 to-pink-900/50 rounded-lg p-8 border border-blue-600 shadow-lg">
-                  <p className="text-lg text-center">
-                    <span className="text-blue-200 font-semibold">📈 Your WPM improved by </span>
-                    <span className={`text-3xl font-extrabold ${improvementPercent > 0 ? 'text-green-400' : improvementPercent < 0 ? 'text-red-400' : 'text-yellow-400'}`}>
-                      {improvementPercent > 0 ? '+' : ''}{improvementPercent}%
-                    </span>
-                    <span className="text-blue-200 font-semibold"> compared to your first test!</span>
-                    {improvementPercent > 0 && <span className="ml-2 text-2xl">🎯</span>}
-                  </p>
-                </div>
-              )}
             </section>
 
             {/* Speed Insights */}
             <section>
-              <h2 className="text-3xl font-bold text-white mb-6">📈 Smart Insights</h2>
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center text-sm">📈</span>
+                Smart Insights
+              </h2>
               <SpeedInsightDashboard />
             </section>
 
-            {/* Progress Summary - Above Leaderboard */}
+            {/* Progress Summary */}
             <section>
               <ProgressSummary />
             </section>
 
-            {/* Achievements & Streak */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Achievements & Streak side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <section>
                 <AchievementBadges />
               </section>
@@ -156,104 +215,89 @@ const Analytics: React.FC = () => {
               </section>
             </div>
 
-            {/* Recent Activity Timeline */}
+            {/* Recent Activity */}
             {history.length > 0 && (
-              <section className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-8 border border-slate-700">
-                <h2 className="text-3xl font-bold text-white mb-8 flex items-center gap-2">
-                  <span>📅</span> Recent Activity
+              <section className="bg-slate-900/60 rounded-xl p-5 sm:p-6 border border-slate-700/50">
+                <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center text-sm">📅</span>
+                  Recent Activity
                 </h2>
-                <div className="space-y-4">
-                  {history.slice(-5).reverse().map((test, idx) => (
+                <div className="space-y-2">
+                  {history.slice(-8).reverse().map((test, idx) => (
                     <div 
                       key={idx}
-                      className="bg-slate-700/50 rounded-lg p-6 border border-slate-600 hover:border-slate-500 transition-all"
+                      className="flex items-center justify-between bg-white/[0.03] rounded-lg px-4 py-3 border border-white/5 hover:border-white/10 transition-colors"
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="text-3xl">
-                            {test.wpm >= 70 ? '🚀' : test.wpm >= 50 ? '⚡' : test.wpm >= 30 ? '📈' : '🌱'}
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">
+                          {test.wpm >= 70 ? '🚀' : test.wpm >= 50 ? '⚡' : test.wpm >= 30 ? '📈' : '🌱'}
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-white">{test.wpm} WPM</span>
+                            <span className={`text-xs ${test.accuracy >= 95 ? 'text-green-400' : test.accuracy >= 90 ? 'text-yellow-400' : 'text-red-400'}`}>
+                              {test.accuracy}%
+                            </span>
+                            <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400 capitalize">
+                              {test.difficulty}
+                            </span>
                           </div>
-                          <div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-2xl font-bold text-white">{test.wpm} WPM</span>
-                              <span className={`text-sm font-semibold ${test.accuracy >= 95 ? 'text-green-400' : test.accuracy >= 90 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                {test.accuracy}% accuracy
-                              </span>
-                              <span className="text-xs bg-slate-600 px-2 py-1 rounded text-slate-300 capitalize">
-                                {test.difficulty}
-                              </span>
-                            </div>
-                            <div className="text-xs text-slate-400 mt-1">
-                              {new Date(test.date).toLocaleString('en-US', { 
-                                month: 'short', 
-                                day: 'numeric', 
-                                hour: 'numeric', 
-                                minute: '2-digit'
-                              })}
-                            </div>
+                          <div className="text-[10px] text-slate-500">
+                            {new Date(test.date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm text-slate-400">
-                            {test.wordsTyped} words
-                          </div>
-                          <div className="text-xs text-slate-500">
-                            {Math.round(test.timeElapsed)}s
-                          </div>
-                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">{test.wordsTyped} words</div>
+                        <div className="text-[10px] text-slate-500">{Math.round(test.timeElapsed)}s</div>
                       </div>
                     </div>
                   ))}
                 </div>
-                {history.length > 5 && (
-                  <div className="mt-4 text-center">
-                    <button className="text-blue-400 hover:text-blue-300 text-sm font-semibold">
-                      View All {history.length} Tests →
-                    </button>
+                {history.length > 8 && (
+                  <div className="mt-3 text-center">
+                    <span className="text-blue-400 text-xs font-medium">
+                      Showing 8 of {history.length} tests
+                    </span>
                   </div>
                 )}
               </section>
             )}
 
-            {/* Practice Recommendations */}
-            <section className="bg-gradient-to-br from-cyan-900 to-blue-900 rounded-xl p-6 border border-cyan-700">
-              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                <span>💡</span> Recommended for You
+            {/* Recommendations */}
+            <section className="bg-slate-900/60 rounded-xl p-5 sm:p-6 border border-slate-700/50">
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-cyan-500/15 flex items-center justify-center text-sm">💡</span>
+                Recommended for You
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {stats.averageAccuracy < 95 && (
-                  <div className="bg-cyan-800/30 rounded-lg p-4 border border-cyan-600">
-                    <div className="text-3xl mb-2">🎯</div>
-                    <h3 className="text-lg font-bold text-white mb-2">Improve Accuracy</h3>
-                    <p className="text-cyan-200 text-sm mb-3">
+                  <div className="bg-white/[0.03] rounded-lg p-4 border border-white/5 hover:border-cyan-500/20 transition-colors">
+                    <div className="text-2xl mb-2">🎯</div>
+                    <h3 className="text-sm font-bold text-white mb-1">Improve Accuracy</h3>
+                    <p className="text-slate-400 text-xs mb-2">
                       Your accuracy is {stats.averageAccuracy}%. Focus on precision over speed.
                     </p>
-                    <a href="/" className="text-cyan-300 hover:text-cyan-200 text-sm font-semibold">
-                      Practice Now →
-                    </a>
+                    <a href="/" className="text-cyan-400 hover:text-cyan-300 text-xs font-semibold">Practice Now →</a>
                   </div>
                 )}
                 {stats.averageWPM < 60 && (
-                  <div className="bg-blue-800/30 rounded-lg p-4 border border-blue-600">
-                    <div className="text-3xl mb-2">⚡</div>
-                    <h3 className="text-lg font-bold text-white mb-2">Build Speed</h3>
-                    <p className="text-blue-200 text-sm mb-3">
+                  <div className="bg-white/[0.03] rounded-lg p-4 border border-white/5 hover:border-blue-500/20 transition-colors">
+                    <div className="text-2xl mb-2">⚡</div>
+                    <h3 className="text-sm font-bold text-white mb-1">Build Speed</h3>
+                    <p className="text-slate-400 text-xs mb-2">
                       Try medium difficulty to push your speed to {stats.averageWPM + 10} WPM.
                     </p>
-                    <a href="/" className="text-blue-300 hover:text-blue-200 text-sm font-semibold">
-                      Start Challenge →
-                    </a>
+                    <a href="/" className="text-blue-400 hover:text-blue-300 text-xs font-semibold">Start Challenge →</a>
                   </div>
                 )}
-                <div className="bg-purple-800/30 rounded-lg p-4 border border-purple-600">
-                  <div className="text-3xl mb-2">📚</div>
-                  <h3 className="text-lg font-bold text-white mb-2">Learn Techniques</h3>
-                  <p className="text-purple-200 text-sm mb-3">
+                <div className="bg-white/[0.03] rounded-lg p-4 border border-white/5 hover:border-purple-500/20 transition-colors">
+                  <div className="text-2xl mb-2">📚</div>
+                  <h3 className="text-sm font-bold text-white mb-1">Learn Techniques</h3>
+                  <p className="text-slate-400 text-xs mb-2">
                     Master touch typing with our comprehensive tutorial guide.
                   </p>
-                  <a href="/tutorial" className="text-purple-300 hover:text-purple-200 text-sm font-semibold">
-                    View Tutorial →
-                  </a>
+                  <a href="/tutorial" className="text-purple-400 hover:text-purple-300 text-xs font-semibold">View Tutorial →</a>
                 </div>
               </div>
             </section>
@@ -263,28 +307,34 @@ const Analytics: React.FC = () => {
               <LeaderboardLocal />
             </section>
 
-            {/* Challenge Section */}
-            <section className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-8 border border-slate-700">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-white mb-2">🚀 Share Your Challenge</h2>
-                <p className="text-slate-300">Create custom typing challenges and share them with friends!</p>
+            {/* Challenge Share */}
+            <section className="bg-slate-900/60 rounded-xl p-5 sm:p-6 border border-slate-700/50">
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg bg-orange-500/15 flex items-center justify-center text-sm">🚀</span>
+                  Share Your Challenge
+                </h2>
+                <p className="text-slate-400 text-xs">Create custom typing challenges and share them with friends!</p>
               </div>
               <ChallengeLinksModal />
             </section>
 
-            {/* Motivational Footer */}
-            <div className="bg-gradient-to-r from-yellow-600 via-orange-600 to-red-600 rounded-xl p-6 text-center shadow-xl border border-yellow-400">
-              <div className="text-4xl mb-3">💪</div>
-              <h3 className="text-2xl font-bold text-white mb-2">Keep Pushing Forward!</h3>
-              <p className="text-white/90 text-lg max-w-2xl mx-auto">
-                {stats.averageWPM < 40 
-                  ? "Every expert was once a beginner. Keep practicing and you'll see amazing results!"
-                  : stats.averageWPM < 60 
-                  ? "You're making great progress! With consistent practice, you'll reach pro level soon!"
-                  : stats.averageWPM < 80 
-                  ? "Impressive speed! You're in the top tier of typists. Keep refining your accuracy!"
-                  : "Outstanding performance! You're a typing master. Challenge yourself with harder content!"}
-              </p>
+            {/* Motivation Footer */}
+            <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-900/40 via-orange-900/40 to-red-900/40 border border-amber-500/20 p-6 text-center">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(251,191,36,0.08),transparent_70%)]"></div>
+              <div className="relative z-10">
+                <div className="text-3xl mb-2">💪</div>
+                <h3 className="text-lg font-bold text-white mb-1">Keep Pushing Forward!</h3>
+                <p className="text-slate-300 text-sm max-w-xl mx-auto">
+                  {stats.averageWPM < 40 
+                    ? "Every expert was once a beginner. Keep practicing and you'll see amazing results!"
+                    : stats.averageWPM < 60 
+                    ? "Great progress! With consistent practice, you'll reach pro level soon!"
+                    : stats.averageWPM < 80 
+                    ? "Impressive speed! You're in the top tier. Keep refining your accuracy!"
+                    : "Outstanding! You're a typing master. Try Hardcore challenges!"}
+                </p>
+              </div>
             </div>
           </div>
         )}

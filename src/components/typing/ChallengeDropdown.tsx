@@ -40,12 +40,20 @@ export interface ChallengeSettings {
   memoryMode: boolean;
   blindStart: boolean;
   mirrorMode: boolean;
-  rhythmMode: boolean;
+  movingTarget: boolean;
   
   // Challenge Modes
   turboEnd: boolean;
   pressureMode: boolean;
   staminaMode: boolean;
+  
+  // Advanced Challenges
+  encryption: boolean;
+  podcastMode: boolean;
+  promptCrafting: boolean;
+  aiHeatmap: boolean;
+  ghostRacing: boolean;
+  hardcoreMode: boolean;
 }
 
 export const defaultChallengeSettings: ChallengeSettings = {
@@ -64,10 +72,16 @@ export const defaultChallengeSettings: ChallengeSettings = {
   memoryMode: false,
   blindStart: false,
   mirrorMode: false,
-  rhythmMode: false,
+  movingTarget: false,
   turboEnd: false,
   pressureMode: false,
   staminaMode: false,
+  encryption: false,
+  podcastMode: false,
+  promptCrafting: false,
+  aiHeatmap: false,
+  ghostRacing: false,
+  hardcoreMode: false,
 };
 
 const challengePresets = [
