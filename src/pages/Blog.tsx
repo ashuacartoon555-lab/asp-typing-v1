@@ -1287,7 +1287,7 @@ const Blog = () => {
       <div className="min-h-screen bg-background">
         <Header />
         
-        <main className="max-w-4xl mx-auto px-5 py-8">
+        <main className="max-w-4xl mx-auto px-3 sm:px-5 py-4 sm:py-8">
           <Button 
             variant="ghost" 
             onClick={() => setSelectedPost(null)}
@@ -1407,21 +1407,21 @@ const Blog = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="max-w-6xl mx-auto px-5 py-8">
+      <main className="max-w-6xl mx-auto px-3 sm:px-5 py-4 sm:py-8">
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-5xl font-extrabold gradient-text mb-4 flex items-center justify-center gap-3">
-            <BookOpen className="w-8 h-8 md:w-10 md:h-10" />
+        <div className="text-center mb-6 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold gradient-text mb-3 sm:mb-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10" />
             Typing Knowledge Hub
           </h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-2xl mx-auto">
             In-depth articles, guides, and resources to help you master typing skills and boost your productivity
           </p>
         </div>
 
         {/* Featured Post */}
         <div 
-          className="card-gradient p-6 md:p-8 rounded-3xl shadow-lg border border-border mb-10 cursor-pointer hover:shadow-xl transition-all"
+          className="card-gradient p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-lg border border-border mb-6 sm:mb-10 cursor-pointer hover:shadow-xl transition-all"
           onClick={() => setSelectedPost(blogPosts[0])}
         >
           <div className="flex flex-col md:flex-row gap-6">

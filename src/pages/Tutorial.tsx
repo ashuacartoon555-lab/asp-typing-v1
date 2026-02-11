@@ -51,22 +51,22 @@ const Tutorial = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="max-w-6xl mx-auto px-5 py-8">
+      <main className="max-w-6xl mx-auto px-3 sm:px-5 py-4 sm:py-8">
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-5xl font-extrabold gradient-text mb-4 flex items-center justify-center gap-3">
-            <Book className="w-8 h-8 md:w-10 md:h-10" />
+        <div className="text-center mb-6 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold gradient-text mb-3 sm:mb-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            <Book className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10" />
             Complete Typing Tutorial
           </h1>
-          <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+          <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-3xl mx-auto">
             Master touch typing from scratch with our comprehensive guide. Learn proper technique, finger placement, and practice strategies to achieve professional typing speeds.
           </p>
         </div>
 
         {/* Quick Start Section */}
-        <div className="card-gradient p-6 md:p-10 rounded-3xl shadow-lg border border-border mb-10">
-          <h2 className="text-2xl md:text-3xl font-bold mb-6 flex items-center gap-3">
-            <Zap className="w-7 h-7 text-primary" />
+        <div className="card-gradient p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-3xl shadow-lg border border-border mb-6 sm:mb-10">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+            <Zap className="w-5 h-5 sm:w-7 sm:h-7 text-primary" />
             Quick Start Guide
           </h2>
           
@@ -121,9 +121,9 @@ const Tutorial = () => {
         </div>
 
         {/* Home Row and Finger Placement */}
-        <div className="card-gradient p-6 md:p-10 rounded-3xl shadow-lg border border-border mb-10">
-          <h2 className="text-2xl md:text-3xl font-bold mb-6 flex items-center gap-3">
-            <Fingerprint className="w-7 h-7 text-primary" />
+        <div className="card-gradient p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-3xl shadow-lg border border-border mb-6 sm:mb-10">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+            <Fingerprint className="w-5 h-5 sm:w-7 sm:h-7 text-primary" />
             Finger Placement Guide
           </h2>
           
@@ -134,26 +134,26 @@ const Tutorial = () => {
           </div>
 
           {/* Keyboard Visualization */}
-          <div className="bg-muted/30 p-4 md:p-6 rounded-2xl mb-8">
-            <h3 className="font-semibold text-center mb-4">Standard QWERTY Keyboard Layout</h3>
-            <div className="font-mono text-center space-y-2 overflow-x-auto">
-              <div className="flex justify-center gap-1 text-xs md:text-sm min-w-max">
+          <div className="bg-muted/30 p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl mb-8">
+            <h3 className="font-semibold text-center mb-3 sm:mb-4 text-sm sm:text-base">Standard QWERTY Keyboard Layout</h3>
+            <div className="font-mono text-center space-y-1.5 sm:space-y-2 overflow-x-auto">
+              <div className="flex justify-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs md:text-sm min-w-max">
                 {['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='].map((key) => (
-                  <span key={key} className="w-8 h-8 md:w-10 md:h-10 bg-card border border-border rounded flex items-center justify-center">
+                  <span key={key} className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-card border border-border rounded flex items-center justify-center">
                     {key}
                   </span>
                 ))}
               </div>
-              <div className="flex justify-center gap-1 text-xs md:text-sm min-w-max">
+              <div className="flex justify-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs md:text-sm min-w-max">
                 {['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'].map((key) => (
-                  <span key={key} className="w-8 h-8 md:w-10 md:h-10 bg-card border border-border rounded flex items-center justify-center">
+                  <span key={key} className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-card border border-border rounded flex items-center justify-center">
                     {key}
                   </span>
                 ))}
               </div>
-              <div className="flex justify-center gap-1 text-xs md:text-sm min-w-max">
+              <div className="flex justify-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs md:text-sm min-w-max">
                 {['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'"].map((key) => (
-                  <span key={key} className={`w-8 h-8 md:w-10 md:h-10 border rounded flex items-center justify-center ${
+                  <span key={key} className={`w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 border rounded flex items-center justify-center ${
                     ['A', 'S', 'D', 'F', 'J', 'K', 'L', ';'].includes(key) 
                       ? 'bg-primary/20 border-primary text-primary font-bold' 
                       : 'bg-card border-border'
@@ -162,15 +162,15 @@ const Tutorial = () => {
                   </span>
                 ))}
               </div>
-              <div className="flex justify-center gap-1 text-xs md:text-sm min-w-max">
+              <div className="flex justify-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs md:text-sm min-w-max">
                 {['Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/'].map((key) => (
-                  <span key={key} className="w-8 h-8 md:w-10 md:h-10 bg-card border border-border rounded flex items-center justify-center">
+                  <span key={key} className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-card border border-border rounded flex items-center justify-center">
                     {key}
                   </span>
                 ))}
               </div>
-              <div className="flex justify-center mt-2">
-                <span className="w-48 md:w-64 h-8 md:h-10 bg-card border border-border rounded flex items-center justify-center text-xs">
+              <div className="flex justify-center mt-1.5 sm:mt-2">
+                <span className="w-32 sm:w-48 md:w-64 h-6 sm:h-8 md:h-10 bg-card border border-border rounded flex items-center justify-center text-[10px] sm:text-xs">
                   SPACE BAR (Either Thumb)
                 </span>
               </div>

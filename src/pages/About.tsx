@@ -33,28 +33,28 @@ const About = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="max-w-5xl mx-auto px-5 py-8">
+      <main className="max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-8">
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-5xl font-extrabold gradient-text mb-4 flex items-center justify-center gap-3">
-            <Info className="w-8 h-8 md:w-10 md:h-10" />
+        <div className="text-center mb-6 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold gradient-text mb-3 sm:mb-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            <Info className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10" />
             About OnlineTypingTest
           </h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-2xl mx-auto">
             Free, No-Signup Typing Practice Platform for Students, Job Seekers, and Professionals
           </p>
         </div>
 
         {/* Stats Section */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-12">
           {stats.map((stat, index) => (
-            <div key={index} className="stat-card text-center p-5">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-xl gradient-bg flex items-center justify-center">
-                <stat.icon className="w-6 h-6 text-white" />
+            <div key={index} className="stat-card text-center p-3 sm:p-5">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 rounded-xl gradient-bg flex items-center justify-center">
+                <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <div className="text-2xl md:text-3xl font-bold text-foreground">{stat.value}</div>
-              <div className="text-sm font-medium text-foreground mt-1">{stat.label}</div>
-              <div className="text-xs text-muted-foreground mt-1">{stat.description}</div>
+              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{stat.value}</div>
+              <div className="text-xs sm:text-sm font-medium text-foreground mt-1">{stat.label}</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">{stat.description}</div>
             </div>
           ))}
         </div>

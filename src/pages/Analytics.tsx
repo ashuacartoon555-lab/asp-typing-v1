@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import Header from '@/components/typing/Header';
 import Footer from '@/components/typing/Footer';
 import AchievementBadges from '@/components/AchievementBadgesNew';
@@ -47,18 +48,18 @@ const Analytics: React.FC = () => {
                 </div>
 
                 {hasTests && (
-                  <div className="flex gap-3">
-                    <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl px-5 py-3 text-center min-w-[90px]">
-                      <div className="text-2xl font-bold text-cyan-400">{stats.totalTests}</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">Tests</div>
+                  <div className="flex flex-wrap gap-2 sm:gap-3">
+                    <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl px-3 sm:px-5 py-2 sm:py-3 text-center min-w-[70px] sm:min-w-[90px]">
+                      <div className="text-lg sm:text-2xl font-bold text-cyan-400">{stats.totalTests}</div>
+                      <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider">Tests</div>
                     </div>
-                    <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl px-5 py-3 text-center min-w-[90px]">
-                      <div className="text-2xl font-bold text-purple-400">{stats.bestWPM}</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">Best WPM</div>
+                    <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl px-3 sm:px-5 py-2 sm:py-3 text-center min-w-[70px] sm:min-w-[90px]">
+                      <div className="text-lg sm:text-2xl font-bold text-purple-400">{stats.bestWPM}</div>
+                      <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider">Best WPM</div>
                     </div>
-                    <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl px-5 py-3 text-center min-w-[90px]">
-                      <div className="text-2xl font-bold text-emerald-400">{stats.averageAccuracy}%</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">Accuracy</div>
+                    <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl px-3 sm:px-5 py-2 sm:py-3 text-center min-w-[70px] sm:min-w-[90px]">
+                      <div className="text-lg sm:text-2xl font-bold text-emerald-400">{stats.averageAccuracy}%</div>
+                      <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider">Accuracy</div>
                     </div>
                   </div>
                 )}
@@ -101,12 +102,12 @@ const Analytics: React.FC = () => {
               <p className="text-slate-400 mb-6 max-w-md mx-auto text-sm">
                 Complete your first typing test to unlock analytics, achievements, progress tracking & more!
               </p>
-              <a
-                href="/"
+              <Link
+                to="/"
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold py-3 px-8 rounded-xl hover:from-cyan-500 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/20"
               >
                 <span>⚡</span> Start Typing Test
-              </a>
+              </Link>
             </div>
 
             {/* Features Preview */}
@@ -139,9 +140,9 @@ const Analytics: React.FC = () => {
               <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                 <span>⚡</span> 25 Typing Challenges Await
               </h3>
-              <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+              <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2">
                 {['📝','🔦','🧘','👻','🚫','🧊','🔒','💀','🔄','🔀','💫','✨','🧠','🙈','🪞','🎯','🔥','⏳','💪','🔐','🎧','✍️','🤖','👤','☠️'].map((e, i) => (
-                  <div key={i} className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/5 border border-white/10 text-sm hover:scale-110 transition-transform">
+                  <div key={i} className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white/5 border border-white/10 text-xs sm:text-sm hover:scale-110 transition-transform">
                     {e}
                   </div>
                 ))}
@@ -161,7 +162,7 @@ const Analytics: React.FC = () => {
                     {new Date(lastTest.date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   </span>
                 </div>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                   <div className="bg-white/5 rounded-lg p-3 text-center">
                     <div className="text-xl font-bold text-cyan-400">{lastTest.wpm}</div>
                     <div className="text-[10px] text-slate-500">WPM</div>
@@ -278,7 +279,7 @@ const Analytics: React.FC = () => {
                     <p className="text-slate-400 text-xs mb-2">
                       Your accuracy is {stats.averageAccuracy}%. Focus on precision over speed.
                     </p>
-                    <a href="/" className="text-cyan-400 hover:text-cyan-300 text-xs font-semibold">Practice Now →</a>
+                    <Link to="/" className="text-cyan-400 hover:text-cyan-300 text-xs font-semibold">Practice Now →</Link>
                   </div>
                 )}
                 {stats.averageWPM < 60 && (
@@ -288,7 +289,7 @@ const Analytics: React.FC = () => {
                     <p className="text-slate-400 text-xs mb-2">
                       Try medium difficulty to push your speed to {stats.averageWPM + 10} WPM.
                     </p>
-                    <a href="/" className="text-blue-400 hover:text-blue-300 text-xs font-semibold">Start Challenge →</a>
+                    <Link to="/" className="text-blue-400 hover:text-blue-300 text-xs font-semibold">Start Challenge →</Link>
                   </div>
                 )}
                 <div className="bg-white/[0.03] rounded-lg p-4 border border-white/5 hover:border-purple-500/20 transition-colors">
@@ -297,7 +298,7 @@ const Analytics: React.FC = () => {
                   <p className="text-slate-400 text-xs mb-2">
                     Master touch typing with our comprehensive tutorial guide.
                   </p>
-                  <a href="/tutorial" className="text-purple-400 hover:text-purple-300 text-xs font-semibold">View Tutorial →</a>
+                  <Link to="/tutorial" className="text-purple-400 hover:text-purple-300 text-xs font-semibold">View Tutorial →</Link>
                 </div>
               </div>
             </section>

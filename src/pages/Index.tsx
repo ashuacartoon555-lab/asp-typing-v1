@@ -1,5 +1,6 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import React from 'react';
+import { Link } from 'react-router-dom';
 import Header from '@/components/typing/Header';
 import PageHeader from '@/components/typing/PageHeader';
 import Options from '@/components/typing/Options';
@@ -27,6 +28,9 @@ const Index = () => {
     wpm,
     accuracy,
     errors,
+    cpm,
+    grossWpm,
+    netWpm,
     testStarted,
     testReady,
     testCompleted,
@@ -63,6 +67,73 @@ const Index = () => {
 
   // Simulated active users count for post-test remark banner
   const [activeUsersCount, setActiveUsersCount] = useState<number | null>(null);
+
+  // Live WPM sparkline history (last 15 data points)
+  const [wpmHistory, setWpmHistory] = useState<number[]>([]);
+  const wpmIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const latestWpmRef = useRef(0);
+
+  // Keep latest WPM in ref so interval always reads current value
+  useEffect(() => {
+    latestWpmRef.current = wpm;
+  }, [wpm]);
+
+  // Track WPM every 2 seconds during test
+  useEffect(() => {
+    if (testStarted && !testCompleted) {
+      setWpmHistory([]);
+      wpmIntervalRef.current = setInterval(() => {
+        setWpmHistory(prev => {
+          const next = [...prev, latestWpmRef.current];
+          return next.length > 15 ? next.slice(-15) : next;
+        });
+      }, 2000);
+    } else {
+      if (wpmIntervalRef.current) clearInterval(wpmIntervalRef.current);
+      wpmIntervalRef.current = null;
+    }
+    return () => { 
+      if (wpmIntervalRef.current) {
+        clearInterval(wpmIntervalRef.current);
+        wpmIntervalRef.current = null;
+      }
+    };
+  }, [testStarted, testCompleted]);
+
+  // Calculate correct streak (consecutive correct chars)
+  const correctStreak = useMemo(() => {
+    if (!inputValue || !promptText) return 0;
+    let streak = 0;
+    for (let i = inputValue.length - 1; i >= 0; i--) {
+      if (inputValue[i] === promptText[i]) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }, [inputValue, promptText]);
+
+  // Performance badge based on live WPM
+  const performanceBadge = useMemo(() => {
+    if (wpm >= 80) return { label: 'Master', emoji: '🏆', color: 'text-yellow-400', bg: 'bg-yellow-500/15 border-yellow-500/30' };
+    if (wpm >= 60) return { label: 'Pro', emoji: '🚀', color: 'text-purple-400', bg: 'bg-purple-500/15 border-purple-500/30' };
+    if (wpm >= 40) return { label: 'Fast', emoji: '⚡', color: 'text-cyan-400', bg: 'bg-cyan-500/15 border-cyan-500/30' };
+    if (wpm >= 20) return { label: 'Learning', emoji: '📈', color: 'text-blue-400', bg: 'bg-blue-500/15 border-blue-500/30' };
+    return { label: 'Beginner', emoji: '🌱', color: 'text-green-400', bg: 'bg-green-500/15 border-green-500/30' };
+  }, [wpm]);
+
+  // Real-time motivation message
+  const liveMotivation = useMemo(() => {
+    if (accuracy >= 98 && wpm >= 60) return { text: 'Perfect flow! 🔥', color: 'text-yellow-400' };
+    if (accuracy >= 95 && wpm >= 40) return { text: 'Great accuracy! Keep it up!', color: 'text-green-400' };
+    if (wpm >= 70) return { text: 'Blazing fast! Watch accuracy!', color: 'text-cyan-400' };
+    if (wpm >= 50) return { text: 'Good speed! Stay focused!', color: 'text-blue-400' };
+    if (accuracy < 80) return { text: 'Slow down, focus on accuracy!', color: 'text-red-400' };
+    if (errors > 5) return { text: 'Too many errors! Be careful!', color: 'text-orange-400' };
+    if (wpm >= 30) return { text: 'Steady pace, keep going!', color: 'text-emerald-400' };
+    return { text: 'Warming up... you got this!', color: 'text-slate-400' };
+  }, [wpm, accuracy, errors]);
 
   // Challenge mode hook integration
   const challengeMode = useChallengeMode({
@@ -415,28 +486,151 @@ const Index = () => {
           </div>
         )}
 
-        {/* Stats Row - 4 Glass Cards - Only show during test (not after completion) */}
+        {/* Stats Row - Color-coded Glass Cards */}
         {testStarted && !testCompleted && !challengeMode.shouldHideTimer && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="glass p-4 sm:p-5 rounded-xl text-center">
-              <div className="text-xs sm:text-sm text-muted-foreground mb-1">Speed</div>
-              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{wpm} WPM</div>
-            </div>
-            <div className="glass p-4 sm:p-5 rounded-xl text-center">
-              <div className="text-xs sm:text-sm text-muted-foreground mb-1">Accuracy</div>
-              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{accuracy}%</div>
-            </div>
-            <div className="glass p-4 sm:p-5 rounded-xl text-center">
-              <div className="text-xs sm:text-sm text-muted-foreground mb-1">Time</div>
-              <div className={`text-xl sm:text-2xl md:text-3xl font-bold ${challengeMode.getTurboMultiplier() > 1 ? 'text-red-500 animate-pulse' : 'text-foreground'}`}>
-                {currentTime}s {challengeMode.getTurboMultiplier() > 1 && '⚡'}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            {/* Speed - color based on WPM */}
+            <div className={`glass p-4 sm:p-5 rounded-xl text-center border ${wpm >= 60 ? 'border-green-500/30' : wpm >= 40 ? 'border-cyan-500/30' : wpm >= 20 ? 'border-blue-500/30' : 'border-slate-500/30'} transition-colors`}>
+              <div className="text-[10px] sm:text-xs text-muted-foreground mb-1 uppercase tracking-wider">Speed</div>
+              <div className={`text-xl sm:text-2xl md:text-3xl font-bold ${wpm >= 60 ? 'text-green-400' : wpm >= 40 ? 'text-cyan-400' : wpm >= 20 ? 'text-blue-400' : 'text-slate-400'}`}>
+                {wpm} <span className="text-sm font-medium opacity-70">WPM</span>
+              </div>
+              <div className="mt-1 h-1 rounded-full bg-white/5 overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-500 ${wpm >= 60 ? 'bg-green-500' : wpm >= 40 ? 'bg-cyan-500' : wpm >= 20 ? 'bg-blue-500' : 'bg-slate-500'}`} style={{ width: `${Math.min(100, (wpm / 100) * 100)}%` }}></div>
               </div>
             </div>
-            <div className="glass p-4 sm:p-5 rounded-xl text-center">
-              <div className="text-xs sm:text-sm text-muted-foreground mb-1">Errors</div>
-              <div className={`text-xl sm:text-2xl md:text-3xl font-bold ${challengeSettings.lastChance && errors >= 2 ? 'text-red-500' : 'text-foreground'}`}>
-                {errors} {challengeSettings.lastChance && `/ 3`}
+
+            {/* Accuracy - color based on accuracy */}
+            <div className={`glass p-4 sm:p-5 rounded-xl text-center border ${accuracy >= 95 ? 'border-green-500/30' : accuracy >= 85 ? 'border-yellow-500/30' : accuracy >= 70 ? 'border-orange-500/30' : 'border-red-500/30'} transition-colors`}>
+              <div className="text-[10px] sm:text-xs text-muted-foreground mb-1 uppercase tracking-wider">Accuracy</div>
+              <div className={`text-xl sm:text-2xl md:text-3xl font-bold ${accuracy >= 95 ? 'text-green-400' : accuracy >= 85 ? 'text-yellow-400' : accuracy >= 70 ? 'text-orange-400' : 'text-red-400'}`}>
+                {accuracy}<span className="text-sm font-medium opacity-70">%</span>
               </div>
+              <div className="mt-1 h-1 rounded-full bg-white/5 overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-500 ${accuracy >= 95 ? 'bg-green-500' : accuracy >= 85 ? 'bg-yellow-500' : accuracy >= 70 ? 'bg-orange-500' : 'bg-red-500'}`} style={{ width: `${accuracy}%` }}></div>
+              </div>
+            </div>
+
+            {/* Time - urgency when low */}
+            <div className={`glass p-4 sm:p-5 rounded-xl text-center border ${currentTime <= 10 ? 'border-red-500/40' : currentTime <= 30 ? 'border-amber-500/30' : 'border-slate-500/20'} transition-colors`}>
+              <div className="text-[10px] sm:text-xs text-muted-foreground mb-1 uppercase tracking-wider">Time</div>
+              <div className={`text-xl sm:text-2xl md:text-3xl font-bold transition-colors ${currentTime <= 10 ? 'text-red-400 animate-pulse' : currentTime <= 30 ? 'text-amber-400' : challengeMode.getTurboMultiplier() > 1 ? 'text-red-500 animate-pulse' : 'text-foreground'}`}>
+                {currentTime}<span className="text-sm font-medium opacity-70">s</span> {challengeMode.getTurboMultiplier() > 1 && '⚡'}
+              </div>
+              <div className="mt-1 h-1 rounded-full bg-white/5 overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-500 ${currentTime <= 10 ? 'bg-red-500' : currentTime <= 30 ? 'bg-amber-500' : 'bg-cyan-500'}`} style={{ width: `${(currentTime / totalTime) * 100}%` }}></div>
+              </div>
+            </div>
+
+            {/* Errors - turns red when high */}
+            <div className={`glass p-4 sm:p-5 rounded-xl text-center border ${errors === 0 ? 'border-green-500/30' : errors <= 3 ? 'border-yellow-500/30' : errors <= 8 ? 'border-orange-500/30' : 'border-red-500/30'} transition-colors`}>
+              <div className="text-[10px] sm:text-xs text-muted-foreground mb-1 uppercase tracking-wider">Errors</div>
+              <div className={`text-xl sm:text-2xl md:text-3xl font-bold ${errors === 0 ? 'text-green-400' : errors <= 3 ? 'text-yellow-400' : errors <= 8 ? 'text-orange-400' : 'text-red-400'}`}>
+                {errors} {challengeSettings.lastChance && <span className="text-sm font-medium opacity-70">/ 3</span>}
+              </div>
+              <div className="mt-1 h-1 rounded-full bg-white/5 overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-500 ${errors === 0 ? 'bg-green-500' : errors <= 3 ? 'bg-yellow-500' : errors <= 8 ? 'bg-orange-500' : 'bg-red-500'}`} style={{ width: `${Math.min(100, (errors / 15) * 100)}%` }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CPM / Gross WPM / Net WPM Strip */}
+        {testStarted && !testCompleted && !challengeMode.shouldHideTimer && (
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
+            {/* CPM */}
+            <div className="glass p-2 sm:p-3 md:p-4 rounded-xl text-center border border-indigo-500/20 transition-colors">
+              <div className="text-[8px] sm:text-[9px] md:text-[10px] text-muted-foreground mb-0.5 uppercase tracking-wider">Characters/Min</div>
+              <div className="text-base sm:text-lg md:text-2xl font-bold text-indigo-400">
+                {cpm} <span className="text-[10px] font-medium opacity-60">CPM</span>
+              </div>
+            </div>
+            {/* Gross WPM */}
+            <div className="glass p-2 sm:p-3 md:p-4 rounded-xl text-center border border-teal-500/20 transition-colors">
+              <div className="text-[8px] sm:text-[9px] md:text-[10px] text-muted-foreground mb-0.5 uppercase tracking-wider">Gross Speed</div>
+              <div className="text-base sm:text-lg md:text-2xl font-bold text-teal-400">
+                {grossWpm} <span className="text-[10px] font-medium opacity-60">WPM</span>
+              </div>
+            </div>
+            {/* Net WPM */}
+            <div className="glass p-2 sm:p-3 md:p-4 rounded-xl text-center border border-rose-500/20 transition-colors">
+              <div className="text-[8px] sm:text-[9px] md:text-[10px] text-muted-foreground mb-0.5 uppercase tracking-wider">Net Speed</div>
+              <div className={`text-base sm:text-lg md:text-2xl font-bold ${netWpm >= 40 ? 'text-green-400' : netWpm >= 20 ? 'text-amber-400' : 'text-rose-400'}`}>
+                {netWpm} <span className="text-[10px] font-medium opacity-60">WPM</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Live Engagement Dashboard */}
+        {testStarted && !testCompleted && (
+          <div className="glass p-2 sm:p-3 md:p-4 rounded-xl mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+              {/* Left: Performance Badge + Motivation */}
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                {/* Performance Badge */}
+                <div className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border ${performanceBadge.bg} flex-shrink-0`}>
+                  <span className="text-xs sm:text-sm">{performanceBadge.emoji}</span>
+                  <span className={`text-[10px] sm:text-xs font-bold ${performanceBadge.color}`}>{performanceBadge.label}</span>
+                </div>
+
+                {/* Streak Counter */}
+                {correctStreak >= 5 && (
+                  <div className="flex items-center gap-1 px-2.5 py-1 bg-orange-500/15 border border-orange-500/25 rounded-full flex-shrink-0">
+                    <span className="text-xs">🔥</span>
+                    <span className="text-orange-400 text-[11px] font-bold">{correctStreak} streak</span>
+                  </div>
+                )}
+
+                {/* Motivation Text */}
+                <span className={`text-[10px] sm:text-xs font-medium truncate ${liveMotivation.color}`}>
+                  {liveMotivation.text}
+                </span>
+              </div>
+
+              {/* Right: Mini WPM Sparkline */}
+              {wpmHistory.length >= 2 && (
+                <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+                  <span className="text-[10px] text-slate-500">WPM</span>
+                  <svg width="80" height="24" viewBox="0 0 80 24" className="overflow-visible">
+                    {/* Grid line */}
+                    <line x1="0" y1="12" x2="80" y2="12" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                    {/* Sparkline */}
+                    <polyline
+                      fill="none"
+                      stroke={wpm >= 60 ? '#34d399' : wpm >= 40 ? '#22d3ee' : '#60a5fa'}
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      points={wpmHistory.map((w, i) => {
+                        const x = (i / (wpmHistory.length - 1)) * 80;
+                        const maxWpm = Math.max(...wpmHistory, 1);
+                        const minWpm = Math.min(...wpmHistory);
+                        const range = Math.max(maxWpm - minWpm, 10);
+                        const y = 22 - ((w - minWpm) / range) * 20;
+                        return `${x},${y}`;
+                      }).join(' ')}
+                    />
+                    {/* Current point */}
+                    {wpmHistory.length > 0 && (() => {
+                      const maxWpm = Math.max(...wpmHistory, 1);
+                      const minWpm = Math.min(...wpmHistory);
+                      const range = Math.max(maxWpm - minWpm, 10);
+                      const lastY = 22 - ((wpmHistory[wpmHistory.length - 1] - minWpm) / range) * 20;
+                      return (
+                        <circle
+                          cx="80"
+                          cy={lastY}
+                          r="2.5"
+                          fill={wpm >= 60 ? '#34d399' : wpm >= 40 ? '#22d3ee' : '#60a5fa'}
+                          className="animate-pulse"
+                        />
+                      );
+                    })()}
+                  </svg>
+                  <span className="text-[10px] text-slate-400 font-mono w-6 text-right">{wpm}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -444,19 +638,19 @@ const Index = () => {
         {/* Live Test Info Strip - Always visible during test */}
         {testStarted && !testCompleted && (
           <div className="mb-4">
-            <div className="glass p-3 rounded-xl">
-              <div className="flex flex-wrap items-center gap-2">
+            <div className="glass p-2 sm:p-3 rounded-xl">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 {/* Current config chips */}
-                <span className="px-2.5 py-1 bg-blue-500/15 border border-blue-500/25 text-blue-300 rounded-full text-[11px] font-medium flex items-center gap-1">
+                <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 bg-blue-500/15 border border-blue-500/25 text-blue-300 rounded-full text-[10px] sm:text-[11px] font-medium flex items-center gap-1">
                   ⏱ {totalTime}s
                 </span>
-                <span className="px-2.5 py-1 bg-purple-500/15 border border-purple-500/25 text-purple-300 rounded-full text-[11px] font-medium flex items-center gap-1 capitalize">
+                <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 bg-purple-500/15 border border-purple-500/25 text-purple-300 rounded-full text-[10px] sm:text-[11px] font-medium flex items-center gap-1 capitalize">
                   📊 {difficulty}
                 </span>
-                <span className="px-2.5 py-1 bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 rounded-full text-[11px] font-medium flex items-center gap-1 capitalize">
+                <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 rounded-full text-[10px] sm:text-[11px] font-medium flex items-center gap-1 capitalize">
                   🌐 {language}
                 </span>
-                <span className="px-2.5 py-1 bg-amber-500/15 border border-amber-500/25 text-amber-300 rounded-full text-[11px] font-medium flex items-center gap-1 capitalize">
+                <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 bg-amber-500/15 border border-amber-500/25 text-amber-300 rounded-full text-[10px] sm:text-[11px] font-medium flex items-center gap-1 capitalize">
                   ⚡ {testMode}
                 </span>
 
@@ -691,8 +885,8 @@ const Index = () => {
 
                 {/* SMART SUGGESTION 2 - Games (Always appealing) */}
                 {result.wpm < 50 ? (
-                  <a 
-                    href="/games"
+                  <Link 
+                    to="/games"
                     className="group glass-hover p-4 sm:p-5 rounded-lg sm:rounded-xl border-2 border-blue-500/50 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 hover:border-blue-400 transition-all duration-300 cursor-pointer relative overflow-hidden"
                   >
                     <div className="absolute top-1 right-1 sm:top-2 sm:right-2 text-[10px] sm:text-xs bg-blue-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-bold animate-pulse">
@@ -706,10 +900,10 @@ const Index = () => {
                     <div className="text-[10px] sm:text-xs font-bold text-blue-300 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                       Play & Learn <span>🏎️</span>
                     </div>
-                  </a>
+                  </Link>
                 ) : result.wpm < 70 ? (
-                  <a 
-                    href="/games"
+                  <Link 
+                    to="/games"
                     className="group glass-hover p-4 sm:p-5 rounded-lg sm:rounded-xl border-2 border-cyan-500/50 bg-gradient-to-br from-cyan-500/20 to-blue-500/10 hover:border-cyan-400 transition-all duration-300 cursor-pointer relative overflow-hidden"
                   >
                     <div className="absolute top-1 right-1 sm:top-2 sm:right-2 text-[10px] sm:text-xs bg-cyan-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-bold">
@@ -723,10 +917,10 @@ const Index = () => {
                     <div className="text-[10px] sm:text-xs font-bold text-cyan-300 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                       Play Now <span>→</span>
                     </div>
-                  </a>
+                  </Link>
                 ) : (
-                  <a 
-                    href="/games"
+                  <Link 
+                    to="/games"
                     className="group glass-hover p-4 sm:p-5 rounded-lg sm:rounded-xl border-2 border-purple-500/50 bg-gradient-to-br from-purple-500/20 to-pink-500/10 hover:border-purple-400 transition-all duration-300 cursor-pointer relative overflow-hidden"
                   >
                     <div className="absolute top-1 right-1 sm:top-2 sm:right-2 text-[10px] sm:text-xs bg-purple-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-bold">
@@ -740,13 +934,13 @@ const Index = () => {
                     <div className="text-[10px] sm:text-xs font-bold text-purple-300 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                       Try Advanced <span>💻</span>
                     </div>
-                  </a>
+                  </Link>
                 )}
 
                 {/* SMART SUGGESTION 3 - Exam or Retry */}
                 {result.wpm >= 70 && result.accuracy >= 90 ? (
-                  <a 
-                    href="/exam-mode"
+                  <Link 
+                    to="/exam-mode"
                     className="group glass-hover p-4 sm:p-5 rounded-lg sm:rounded-xl border-2 border-yellow-500/50 bg-gradient-to-br from-yellow-500/20 to-orange-500/10 hover:border-yellow-400 transition-all duration-300 cursor-pointer relative overflow-hidden"
                   >
                     <div className="absolute top-1 right-1 sm:top-2 sm:right-2 text-[10px] sm:text-xs bg-yellow-500 text-black px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-bold">
@@ -760,7 +954,7 @@ const Index = () => {
                     <div className="text-[10px] sm:text-xs font-bold text-yellow-300 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                       Start Exam <span>📝</span>
                     </div>
-                  </a>
+                  </Link>
                 ) : (
                   <button
                     onClick={resetTest}

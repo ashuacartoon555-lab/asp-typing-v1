@@ -11,6 +11,9 @@ interface ResultDisplayProps {
     errors: number;
     timeTaken: number;
     date: string;
+    cpm?: number;
+    grossWpm?: number;
+    netWpm?: number;
   };
   motivation: { emoji: string; text: string } | null;
   onNewTest: () => void;
@@ -39,7 +42,7 @@ const ResultDisplay = ({ result, motivation, onNewTest, promptText = '', inputVa
   };
 
   const handleShare = () => {
-    const text = `I just scored ${result.wpm} WPM with ${result.accuracy}% accuracy on Online Typing Test! Try it yourself.`;
+    const text = `I just scored ${result.wpm} WPM (Net: ${result.netWpm || 0}, CPM: ${result.cpm || 0}) with ${result.accuracy}% accuracy on Online Typing Test! Try it yourself.`;
     
     if (navigator.share) {
       navigator.share({
@@ -132,12 +135,17 @@ const ResultDisplay = ({ result, motivation, onNewTest, promptText = '', inputVa
     ctx.fillText(`Errors: ${result.errors}`, 70, 360);
     ctx.fillText(`Time: ${result.timeTaken}s`, 70, 410);
 
+    // CPM / Gross / Net
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '500 20px Segoe UI, Arial, sans-serif';
+    ctx.fillText(`CPM: ${result.cpm || 0}  •  Gross: ${result.grossWpm || 0}  •  Net: ${result.netWpm || 0}`, 70, 450);
+
     // Badge
     ctx.fillStyle = `${theme.accent}33`;
-    ctx.fillRect(70, 450, 320, 60);
+    ctx.fillRect(70, 475, 320, 60);
     ctx.fillStyle = '#ffffff';
     ctx.font = '600 22px Segoe UI, Arial, sans-serif';
-    ctx.fillText('onlinetypingtest.in', 90, 488);
+    ctx.fillText('onlinetypingtest.in', 90, 513);
 
     // QR
     try {
@@ -325,10 +333,13 @@ const ResultDisplay = ({ result, motivation, onNewTest, promptText = '', inputVa
     doc.text(`Typing Speed: ${wpm} WPM`, 105, 155, { align: 'center' });
     doc.text(`Accuracy: ${accuracy}%`, 105, 168, { align: 'center' });
     doc.text(`Level: ${level}`, 105, 181, { align: 'center' });
-    doc.text(`Date: ${date}`, 105, 194, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text(`CPM: ${result.cpm || 0}  |  Gross WPM: ${result.grossWpm || 0}  |  Net WPM: ${result.netWpm || 0}`, 105, 194, { align: 'center' });
+    doc.setFontSize(14);
+    doc.text(`Date: ${date}`, 105, 207, { align: 'center' });
 
     // QR
-    doc.addImage(qrDataUrl, 'PNG', 80, 205, 50, 50);
+    doc.addImage(qrDataUrl, 'PNG', 80, 215, 50, 50);
 
     // Signature lines
     doc.setDrawColor(...theme.text);
@@ -364,34 +375,68 @@ const ResultDisplay = ({ result, motivation, onNewTest, promptText = '', inputVa
       </div>
       
       <div className="mb-8 text-center">
-        <h2 className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 text-3xl font-bold flex items-center justify-center gap-3">
-          <Trophy className="w-8 h-8 text-yellow-400" /> Test Results
+        <h2 className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 text-2xl sm:text-3xl font-bold flex items-center justify-center gap-2 sm:gap-3">
+          <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-400" /> Test Results
         </h2>
       </div>
       
       {motivation && (
-        <div className="bg-gradient-to-br from-emerald-500/10 via-cyan-500/10 to-blue-500/10 border-2 border-emerald-400/30 rounded-2xl p-6 mb-8 text-center shadow-lg backdrop-blur-sm">
-          <span className="text-5xl block mb-3">{motivation.emoji}</span>
-          <p className="text-lg font-semibold text-white">{motivation.text}</p>
+        <div className="bg-gradient-to-br from-emerald-500/10 via-cyan-500/10 to-blue-500/10 border-2 border-emerald-400/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 text-center shadow-lg backdrop-blur-sm">
+          <span className="text-3xl sm:text-5xl block mb-2 sm:mb-3">{motivation.emoji}</span>
+          <p className="text-sm sm:text-lg font-semibold text-white">{motivation.text}</p>
         </div>
       )}
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 mb-8 text-center">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 mb-4 text-center">
         <div className="stat-card bg-black/60 border-2 border-emerald-400/40 backdrop-blur-sm hover:shadow-xl hover:shadow-emerald-500/30 hover:border-emerald-400/60 transition-all">
-          <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-cyan-400 block mb-2">{result.wpm}</span>
-          <span className="text-xs sm:text-sm uppercase tracking-wide text-white/80 font-medium">Words Per Minute</span>
+          <span className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-cyan-400 block mb-1 sm:mb-2">{result.wpm}</span>
+          <span className="text-[10px] sm:text-xs md:text-sm uppercase tracking-wide text-white/80 font-medium">Words Per Minute</span>
         </div>
         <div className="stat-card bg-black/60 border-2 border-cyan-400/40 backdrop-blur-sm hover:shadow-xl hover:shadow-cyan-500/30 hover:border-cyan-400/60 transition-all">
-          <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 to-blue-400 block mb-2">{result.accuracy}%</span>
-          <span className="text-xs sm:text-sm uppercase tracking-wide text-white/80 font-medium">Accuracy</span>
+          <span className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 to-blue-400 block mb-1 sm:mb-2">{result.accuracy}%</span>
+          <span className="text-[10px] sm:text-xs md:text-sm uppercase tracking-wide text-white/80 font-medium">Accuracy</span>
         </div>
         <div className="stat-card bg-black/60 border-2 border-blue-400/40 backdrop-blur-sm hover:shadow-xl hover:shadow-blue-500/30 hover:border-blue-400/60 transition-all">
-          <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-400 block mb-2">{result.errors}</span>
-          <span className="text-xs sm:text-sm uppercase tracking-wide text-white/80 font-medium">Total Errors</span>
+          <span className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-400 block mb-1 sm:mb-2">{result.errors}</span>
+          <span className="text-[10px] sm:text-xs md:text-sm uppercase tracking-wide text-white/80 font-medium">Total Errors</span>
         </div>
         <div className="stat-card bg-black/60 border-2 border-purple-400/40 backdrop-blur-sm hover:shadow-xl hover:shadow-purple-500/30 hover:border-purple-400/60 transition-all">
-          <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-purple-400 to-pink-400 block mb-2">{result.timeTaken}s</span>
-          <span className="text-xs sm:text-sm uppercase tracking-wide text-white/80 font-medium">Time Taken</span>
+          <span className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-purple-400 to-pink-400 block mb-1 sm:mb-2">{result.timeTaken}s</span>
+          <span className="text-[10px] sm:text-xs md:text-sm uppercase tracking-wide text-white/80 font-medium">Time Taken</span>
+        </div>
+      </div>
+
+      {/* CPM / Gross WPM / Net WPM - Detailed Metrics */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-8 text-center">
+        <div className="stat-card bg-black/60 border-2 border-indigo-400/30 backdrop-blur-sm hover:shadow-lg hover:shadow-indigo-500/20 hover:border-indigo-400/50 transition-all">
+          <span className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-400 to-violet-400 block mb-1">{result.cpm || 0}</span>
+          <span className="text-[10px] sm:text-xs uppercase tracking-wide text-white/70 font-medium">Characters/Min</span>
+          <span className="block text-[9px] text-indigo-300/50 mt-0.5">CPM</span>
+        </div>
+        <div className="stat-card bg-black/60 border-2 border-teal-400/30 backdrop-blur-sm hover:shadow-lg hover:shadow-teal-500/20 hover:border-teal-400/50 transition-all">
+          <span className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-teal-400 to-emerald-400 block mb-1">{result.grossWpm || 0}</span>
+          <span className="text-[10px] sm:text-xs uppercase tracking-wide text-white/70 font-medium">Gross WPM</span>
+          <span className="block text-[9px] text-teal-300/50 mt-0.5">All keystrokes</span>
+        </div>
+        <div className="stat-card bg-black/60 border-2 border-rose-400/30 backdrop-blur-sm hover:shadow-lg hover:shadow-rose-500/20 hover:border-rose-400/50 transition-all">
+          <span className={`text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text block mb-1 ${
+            (result.netWpm || 0) >= 40 ? 'bg-gradient-to-br from-green-400 to-emerald-400' : 
+            (result.netWpm || 0) >= 20 ? 'bg-gradient-to-br from-amber-400 to-yellow-400' : 
+            'bg-gradient-to-br from-rose-400 to-red-400'
+          }`}>{result.netWpm || 0}</span>
+          <span className="text-[10px] sm:text-xs uppercase tracking-wide text-white/70 font-medium">Net WPM</span>
+          <span className="block text-[9px] text-rose-300/50 mt-0.5">After error penalty</span>
+        </div>
+      </div>
+
+      {/* Metric Explainer */}
+      <div className="mb-6 bg-black/40 rounded-lg p-3 border border-white/5">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[10px] sm:text-[11px] text-white/40">
+          <span><strong className="text-indigo-400/70">CPM</strong> = Total chars typed per minute</span>
+          <span className="hidden sm:inline">•</span>
+          <span><strong className="text-teal-400/70">Gross WPM</strong> = (Chars ÷ 5) per minute</span>
+          <span className="hidden sm:inline">•</span>
+          <span><strong className="text-rose-400/70">Net WPM</strong> = Correct chars only ÷ 5 per min</span>
         </div>
       </div>
       
@@ -412,36 +457,36 @@ const ResultDisplay = ({ result, motivation, onNewTest, promptText = '', inputVa
         />
       )}
       
-      <div className="flex flex-wrap gap-4 justify-center mt-8">
+      <div className="flex flex-wrap gap-2 sm:gap-4 justify-center mt-6 sm:mt-8">
         <button 
           onClick={onNewTest}
-          className="flex items-center justify-center gap-3 px-6 py-3 gradient-bg text-primary-foreground rounded-xl font-semibold hover:-translate-y-1 hover:shadow-lg transition-all"
+          className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 gradient-bg text-primary-foreground rounded-xl text-sm sm:text-base font-semibold hover:-translate-y-1 hover:shadow-lg transition-all"
         >
-          <PlusCircle className="w-5 h-5" /> Start New Test
+          <PlusCircle className="w-4 h-4 sm:w-5 sm:h-5" /> New Test
         </button>
         <button 
           onClick={handleShare}
-          className="flex items-center justify-center gap-3 px-6 py-3 bg-muted text-foreground rounded-xl font-semibold hover:-translate-y-1 hover:shadow-md transition-all"
+          className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-muted text-foreground rounded-xl text-sm sm:text-base font-semibold hover:-translate-y-1 hover:shadow-md transition-all"
         >
-          <Share2 className="w-5 h-5" /> Share
+          <Share2 className="w-4 h-4 sm:w-5 sm:h-5" /> Share
         </button>
         <button 
           onClick={() => setIsShareCardOpen(true)}
-          className="flex items-center justify-center gap-3 px-6 py-3 bg-muted text-foreground rounded-xl font-semibold hover:-translate-y-1 hover:shadow-md transition-all"
+          className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-muted text-foreground rounded-xl text-sm sm:text-base font-semibold hover:-translate-y-1 hover:shadow-md transition-all"
         >
-          <Share2 className="w-5 h-5" /> Share Card
+          <Share2 className="w-4 h-4 sm:w-5 sm:h-5" /> Share Card
         </button>
         <button 
           onClick={handleSave}
-          className="flex items-center justify-center gap-3 px-6 py-3 bg-muted text-foreground rounded-xl font-semibold hover:-translate-y-1 hover:shadow-md transition-all"
+          className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-muted text-foreground rounded-xl text-sm sm:text-base font-semibold hover:-translate-y-1 hover:shadow-md transition-all"
         >
-          <Save className="w-5 h-5" /> Save
+          <Save className="w-4 h-4 sm:w-5 sm:h-5" /> Save
         </button>
         <button 
           onClick={() => setIsCertificateOpen(true)}
-          className="flex items-center justify-center gap-3 px-6 py-3 bg-muted text-foreground rounded-xl font-semibold hover:-translate-y-1 hover:shadow-md transition-all"
+          className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-muted text-foreground rounded-xl text-sm sm:text-base font-semibold hover:-translate-y-1 hover:shadow-md transition-all"
         >
-          <Download className="w-5 h-5" /> Download Certificate
+          <Download className="w-4 h-4 sm:w-5 sm:h-5" /> Certificate
         </button>
       </div>
 

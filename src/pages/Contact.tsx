@@ -1,5 +1,6 @@
 import Header from '@/components/typing/Header';
 import Footer from '@/components/typing/Footer';
+import { Link } from 'react-router-dom';
 import { Mail, MessageSquare, Send, Clock, HelpCircle, Users, Globe, FileText, Keyboard, Shield, CheckCircle, Zap, BookOpen, Phone, MapPin, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -88,22 +89,22 @@ const Contact = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="max-w-6xl mx-auto px-5 py-8">
+      <main className="max-w-6xl mx-auto px-3 sm:px-5 py-8">
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-5xl font-extrabold gradient-text mb-4 flex items-center justify-center gap-3">
-            <Mail className="w-8 h-8 md:w-10 md:h-10" />
+        <div className="text-center mb-6 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold gradient-text mb-4 flex items-center justify-center gap-2 sm:gap-3">
+            <Mail className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10" />
             Contact Us
           </h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
             Have questions, feedback, or suggestions? Check our FAQs below for instant answers, or email us directly for specific inquiries.
           </p>
         </div>
 
         {/* Contact Methods */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
+        <div className="grid md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-12">
           {contactMethods.map((method, index) => (
-            <div key={index} className="card-gradient p-6 rounded-3xl shadow-lg border border-border text-center">
+            <div key={index} className="card-gradient p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg border border-border text-center">
               <div className="w-14 h-14 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-4">
                 <method.icon className="w-7 h-7 text-white" />
               </div>
@@ -116,11 +117,11 @@ const Contact = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-12">
           {/* Contact Form */}
-          <div className="card-gradient p-6 md:p-8 rounded-3xl shadow-lg border border-border">
-            <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-              <Send className="w-6 h-6 text-primary" />
+          <div className="card-gradient p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-lg border border-border">
+            <h2 className="text-xl sm:text-2xl font-bold mb-2 flex items-center gap-2">
+              <Send className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               Send Us a Message
             </h2>
             <p className="text-muted-foreground mb-6">
@@ -204,9 +205,9 @@ const Contact = () => {
 
           {/* FAQ Section */}
           <div className="space-y-6">
-            <div className="card-gradient p-6 md:p-8 rounded-3xl shadow-lg border border-border">
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <HelpCircle className="w-6 h-6 text-primary" />
+            <div className="card-gradient p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-lg border border-border">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 Frequently Asked Questions
               </h2>
               
@@ -226,33 +227,33 @@ const Contact = () => {
             </div>
 
             {/* Quick Links */}
-            <div className="card-gradient p-6 rounded-3xl shadow-lg border border-border">
+            <div className="card-gradient p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg border border-border">
               <h3 className="font-bold mb-4 flex items-center gap-2">
                 <Zap className="w-5 h-5 text-primary" />
                 Quick Links
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                <a href="/tutorial" className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
+                <Link to="/tutorial" className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
                   <BookOpen className="w-4 h-4 text-primary" />
                   <span className="text-sm">Tutorials</span>
-                </a>
-                <a href="/tips" className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
+                </Link>
+                <Link to="/tips" className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
                   <FileText className="w-4 h-4 text-primary" />
                   <span className="text-sm">Typing Tips</span>
-                </a>
-                <a href="/games" className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
+                </Link>
+                <Link to="/games" className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
                   <Keyboard className="w-4 h-4 text-primary" />
                   <span className="text-sm">Typing Games</span>
-                </a>
-                <a href="/exam-mode" className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
+                </Link>
+                <Link to="/exam-mode" className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
                   <Shield className="w-4 h-4 text-primary" />
                   <span className="text-sm">Exam Mode</span>
-                </a>
+                </Link>
               </div>
             </div>
 
             {/* Community */}
-            <div className="card-gradient p-6 rounded-3xl shadow-lg border border-border text-center">
+            <div className="card-gradient p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg border border-border text-center">
               <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center mx-auto mb-3">
                 <Heart className="w-6 h-6 text-white" />
               </div>
@@ -261,9 +262,9 @@ const Contact = () => {
                 Share this free typing practice platform with friends and colleagues.
               </p>
               <div className="flex justify-center gap-3">
-                <a href="/" title="Visit OnlineTypingTest.in" className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-primary/20 transition-all">
+                <Link to="/" title="Visit OnlineTypingTest.in" className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-primary/20 transition-all">
                   <Globe className="w-5 h-5 text-primary" />
-                </a>
+                </Link>
                 <a href="mailto:support@onlinetypingtest.in" title="Email us" className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-primary/20 transition-all">
                   <Users className="w-5 h-5 text-primary" />
                 </a>
@@ -276,7 +277,7 @@ const Contact = () => {
         </div>
 
         {/* Bottom CTA */}
-        <div className="card-gradient p-8 rounded-3xl shadow-lg border border-border text-center">
+        <div className="card-gradient p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-lg border border-border text-center">
           <h3 className="text-xl font-bold mb-3">Need Immediate Assistance?</h3>
           <p className="text-muted-foreground mb-4 max-w-lg mx-auto">
             For urgent matters or partnership inquiries, reach us directly at our official email address.

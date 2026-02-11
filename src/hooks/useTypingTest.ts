@@ -36,6 +36,9 @@ interface TestResult {
   errors: number;
   timeTaken: number;
   date: string;
+  cpm: number;
+  grossWpm: number;
+  netWpm: number;
 }
 
 interface UseTypingTestReturn {
@@ -46,6 +49,9 @@ interface UseTypingTestReturn {
   wpm: number;
   accuracy: number;
   errors: number;
+  cpm: number;
+  grossWpm: number;
+  netWpm: number;
   testStarted: boolean;
   testReady: boolean;
   testCompleted: boolean;
@@ -571,7 +577,7 @@ export function useTypingTest(): UseTypingTestReturn {
 
   const calculateStats = useCallback((input: string, prompt: string, timeElapsed: number) => {
     if (input.length === 0) {
-      return { wpm: 0, accuracy: 0, errors: 0 };
+      return { wpm: 0, accuracy: 0, errors: 0, cpm: 0, grossWpm: 0, netWpm: 0 };
     }
     
     let errors = 0;
@@ -593,13 +599,20 @@ export function useTypingTest(): UseTypingTestReturn {
     const words = input.trim().split(/\s+/).filter(word => word.length > 0).length;
     const wpm = Math.round(words / minutes) || 0;
     
-    return { wpm, accuracy, errors };
+    // CPM: Characters Per Minute (all keystrokes)
+    const cpm = Math.round(totalChars / minutes) || 0;
+    // Gross WPM: Standard formula (total chars / 5) / minutes
+    const grossWpm = Math.round((totalChars / 5) / minutes) || 0;
+    // Net WPM: Only correct characters count (correct chars / 5) / minutes
+    const netWpm = Math.round((correctChars / 5) / minutes) || 0;
+    
+    return { wpm, accuracy, errors, cpm, grossWpm, netWpm };
   }, []);
 
   // Live stats for display
   const getLiveStats = useCallback(() => {
     if (inputValue.length === 0 || !testStarted) {
-      return { wpm: 0, accuracy: 0, errors: 0 };
+      return { wpm: 0, accuracy: 0, errors: 0, cpm: 0, grossWpm: 0, netWpm: 0 };
     }
     
     // Calculate actual elapsed time from start
@@ -679,7 +692,7 @@ export function useTypingTest(): UseTypingTestReturn {
     
     const currentInput = inputValueRef.current;
     const currentPrompt = promptTextRef.current;
-    const { wpm, accuracy, errors } = calculateStats(currentInput, currentPrompt, displayTime);
+    const { wpm, accuracy, errors, cpm, grossWpm, netWpm } = calculateStats(currentInput, currentPrompt, displayTime);
     
     const testDate = new Date().toISOString();
     
@@ -688,7 +701,10 @@ export function useTypingTest(): UseTypingTestReturn {
       accuracy,
       errors,
       timeTaken: displayTime,
-      date: testDate
+      date: testDate,
+      cpm,
+      grossWpm,
+      netWpm
     });
 
     // Save to localStorage and trigger achievements
@@ -848,6 +864,9 @@ export function useTypingTest(): UseTypingTestReturn {
     wpm: stats.wpm,
     accuracy: stats.accuracy,
     errors: stats.errors,
+    cpm: stats.cpm,
+    grossWpm: stats.grossWpm,
+    netWpm: stats.netWpm,
     testStarted,
     testReady,
     testCompleted,

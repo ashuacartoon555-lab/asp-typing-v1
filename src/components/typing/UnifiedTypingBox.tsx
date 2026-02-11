@@ -362,9 +362,9 @@ const UnifiedTypingBox = ({
           minHeight: `${boxHeightPx}px`,
           maxHeight: `${boxHeightPx}px`,
           height: `${boxHeightPx}px`,
-          padding: '24px 40px',
+          padding: 'clamp(12px, 3vw, 24px) clamp(10px, 4vw, 40px)',
           margin: '0 auto',
-          maxWidth: '1200px',
+          maxWidth: '100%',
           boxShadow: '0 8px 24px hsla(0, 0%, 0%, 0.4), inset 0 1px 0 hsla(0, 0%, 100%, 0.08)',
           overflow: 'hidden',
           display: 'flex',
@@ -377,7 +377,7 @@ const UnifiedTypingBox = ({
           className="select-none typing-text"
           style={{
             fontFamily: "'JetBrains Mono', 'ui-monospace', monospace",
-            fontSize: '21px',
+            fontSize: 'clamp(14px, 2.5vw, 21px)',
             fontWeight: 500,
             lineHeight: '1.75',
             letterSpacing: '0.4px',
@@ -478,7 +478,7 @@ const UnifiedTypingBox = ({
 
             {/* Scrolling challenges grid */}
             <div className="flex-1 overflow-hidden relative px-3 pb-2">
-              <div className="challenge-scroll-container grid grid-cols-5 gap-1.5 auto-rows-min" style={{animation: 'challengeScroll 20s linear infinite'}}>
+              <div className="challenge-scroll-container grid grid-cols-3 sm:grid-cols-5 gap-1 sm:gap-1.5 auto-rows-min" style={{animation: 'challengeScroll 20s linear infinite'}}>
                 {[
                   { emoji: '📝', name: 'One Line', color: 'from-purple-500/20 to-purple-900/20', border: 'border-purple-500/30', text: 'text-purple-300' },
                   { emoji: '🔦', name: 'Focus Strip', color: 'from-cyan-500/20 to-cyan-900/20', border: 'border-cyan-500/30', text: 'text-cyan-300' },

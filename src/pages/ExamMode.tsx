@@ -79,42 +79,42 @@ const ExamMode = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="max-w-5xl mx-auto px-5 py-6">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold gradient-text mb-4">
-            <GraduationCap className="inline w-8 h-8 mr-2" />
+      <main className="max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold gradient-text mb-3 sm:mb-4">
+            <GraduationCap className="inline w-6 h-6 sm:w-8 sm:h-8 mr-2" />
             Exam Mode
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-sm sm:text-lg">
             Practice with exam-style patterns inspired by SSC, Banking, Railways & more
           </p>
         </div>
 
-        <div className="card-gradient p-6 rounded-3xl shadow-lg border border-border mb-8">
-          <div className="flex flex-wrap items-center justify-center gap-6 text-center">
+        <div className="card-gradient p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg border border-border mb-6 sm:mb-8">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-center">
             <div>
-              <div className="text-3xl font-bold text-primary">6</div>
-              <div className="text-sm text-muted-foreground">Exam Patterns</div>
+              <div className="text-xl sm:text-3xl font-bold text-primary">6</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Exam Patterns</div>
             </div>
             <div className="w-px h-12 bg-border hidden md:block" />
             <div>
-              <div className="text-3xl font-bold text-primary">100%</div>
-              <div className="text-sm text-muted-foreground">Exam-Style Patterns</div>
+              <div className="text-xl sm:text-3xl font-bold text-primary">100%</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Exam-Style Patterns</div>
             </div>
             <div className="w-px h-12 bg-border hidden md:block" />
             <div>
-              <div className="text-3xl font-bold text-primary">Practice</div>
-              <div className="text-sm text-muted-foreground">Practice Summary</div>
+              <div className="text-xl sm:text-3xl font-bold text-primary">Practice</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Practice Summary</div>
             </div>
             <div className="w-px h-12 bg-border hidden md:block" />
             <div>
-              <div className="text-3xl font-bold text-primary">Free</div>
-              <div className="text-sm text-muted-foreground">No Registration</div>
+              <div className="text-xl sm:text-3xl font-bold text-primary">Free</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">No Registration</div>
             </div>
             <div className="w-px h-12 bg-border hidden md:block" />
             <div>
-              <div className="text-3xl font-bold text-primary">Analytics</div>
-              <div className="text-sm text-muted-foreground">Performance Tracking</div>
+              <div className="text-xl sm:text-3xl font-bold text-primary">Analytics</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Performance Tracking</div>
             </div>
           </div>
         </div>

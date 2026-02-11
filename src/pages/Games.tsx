@@ -64,11 +64,11 @@ const Games = () => {
   };
 
   const renderGameCard = (game: typeof games[0]) => (
-    <div key={game.id} className="card-gradient p-6 rounded-3xl shadow-lg border border-border hover:shadow-xl transition-all hover:-translate-y-1">
-      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-r ${game.color} flex items-center justify-center mb-4`}>
-        <game.icon className="w-7 h-7 text-white" />
+    <div key={game.id} className="card-gradient p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg border border-border hover:shadow-xl transition-all hover:-translate-y-1">
+      <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-r ${game.color} flex items-center justify-center mb-3 sm:mb-4`}>
+        <game.icon className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
       </div>
-      <h3 className="text-xl font-bold mb-2">{game.title}</h3>
+      <h3 className="text-lg sm:text-xl font-bold mb-1 sm:mb-2">{game.title}</h3>
       <p className="text-muted-foreground text-sm mb-4">{game.description}</p>
       <div className="flex items-center justify-between">
         <span className={`text-xs px-3 py-1 rounded-full ${game.difficulty === 'Easy' ? 'bg-green-500/20 text-green-500' : game.difficulty === 'Medium' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-red-500/20 text-red-500'}`}>
@@ -92,51 +92,51 @@ const Games = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="max-w-5xl mx-auto px-5 py-6">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-extrabold gradient-text mb-4">
-            <Gamepad2 className="inline w-8 h-8 mr-2" />
+      <main className="max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6">
+        <div className="text-center mb-6 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold gradient-text mb-3 sm:mb-4">
+            <Gamepad2 className="inline w-6 h-6 sm:w-8 sm:h-8 mr-2" />
             Typing Games
           </h1>
-          <p className="text-muted-foreground text-lg">15 engaging games to improve typing speed, accuracy, and consistency while having fun.</p>
+          <p className="text-muted-foreground text-sm sm:text-lg">15 engaging games to improve typing speed, accuracy, and consistency while having fun.</p>
         </div>
 
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 flex items-center">
-            <div className="w-1 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded mr-3"></div>
+        <div className="mb-6 sm:mb-12">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
+            <div className="w-1 h-6 sm:h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded mr-3"></div>
             ⚡ Action Games (5)
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {games.filter(g => g.category === 'Action').map(renderGameCard)}
           </div>
         </div>
 
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 flex items-center">
-            <div className="w-1 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded mr-3"></div>
+        <div className="mb-6 sm:mb-12">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
+            <div className="w-1 h-6 sm:h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded mr-3"></div>
             🧩 Puzzle Games (4)
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {games.filter(g => g.category === 'Puzzle').map(renderGameCard)}
           </div>
         </div>
 
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 flex items-center">
-            <div className="w-1 h-8 bg-gradient-to-r from-yellow-500 to-orange-500 rounded mr-3"></div>
+        <div className="mb-6 sm:mb-12">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
+            <div className="w-1 h-6 sm:h-8 bg-gradient-to-r from-yellow-500 to-orange-500 rounded mr-3"></div>
             🎯 Focus Games (3)
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {games.filter(g => g.category === 'Focus').map(renderGameCard)}
           </div>
         </div>
 
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 flex items-center">
-            <div className="w-1 h-8 bg-gradient-to-r from-indigo-500 to-blue-500 rounded mr-3"></div>
+        <div className="mb-6 sm:mb-12">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
+            <div className="w-1 h-6 sm:h-8 bg-gradient-to-r from-indigo-500 to-blue-500 rounded mr-3"></div>
             💻 Technical Games (3)
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {games.filter(g => g.category === 'Technical').map(renderGameCard)}
           </div>
         </div>
