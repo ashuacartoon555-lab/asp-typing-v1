@@ -86,6 +86,7 @@ export const defaultChallengeSettings: ChallengeSettings = {
 
 const challengePresets = [
   { value: 'none', label: 'No Challenges', icon: '🎯' },
+  { value: 'ai-features', label: 'AI Features', icon: '🤖' },
   { value: 'beginner', label: 'Beginner', icon: '🌱' },
   { value: 'focus', label: 'Focus Master', icon: '👁️' },
   { value: 'speed', label: 'Speed Demon', icon: '⚡' },
@@ -120,6 +121,17 @@ const ChallengeDropdown = ({ settings, onChange, disabled }: ChallengeDropdownPr
     switch (preset) {
       case 'none':
         onChange(defaultChallengeSettings);
+        setDialogOpen(false);
+        break;
+        
+      case 'ai-features':
+        onChange({
+          ...defaultChallengeSettings,
+          podcastMode: true,
+          promptCrafting: true,
+          aiHeatmap: true,
+          ghostRacing: true,
+        });
         setDialogOpen(false);
         break;
         
@@ -228,6 +240,41 @@ const ChallengeDropdown = ({ settings, onChange, disabled }: ChallengeDropdownPr
           </DialogHeader>
 
           <div className="space-y-6">
+            {/* AI Features - NEW! */}
+            <div className="space-y-3 border-2 border-cyan-500/30 rounded-lg p-4 bg-cyan-500/5">
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <span className="text-cyan-400">🤖</span>
+                <span className="text-cyan-300">AI Features</span>
+                <span className="text-[10px] px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded-full font-bold">NEW</span>
+              </h3>
+              <div className="space-y-2 pl-6">
+                <CheckboxItem 
+                  label="Podcast Mode"
+                  checked={settings.podcastMode}
+                  onToggle={() => handleToggle('podcastMode')}
+                  description="Listen & type blindly (TTS)"
+                />
+                <CheckboxItem 
+                  label="Prompt Crafting"
+                  checked={settings.promptCrafting}
+                  onToggle={() => handleToggle('promptCrafting')}
+                  description="Practice AI prompt engineering"
+                />
+                <CheckboxItem 
+                  label="AI Heatmap"
+                  checked={settings.aiHeatmap}
+                  onToggle={() => handleToggle('aiHeatmap')}
+                  description="Track keystroke latency per key"
+                />
+                <CheckboxItem 
+                  label="Ghost Racing"
+                  checked={settings.ghostRacing}
+                  onToggle={() => handleToggle('ghostRacing')}
+                  description="Race against your PB ghost"
+                />
+              </div>
+            </div>
+
             {/* Focus Modes */}
             <div className="space-y-3">
               <h3 className="font-semibold text-sm flex items-center gap-2">
@@ -356,10 +403,10 @@ const ChallengeDropdown = ({ settings, onChange, disabled }: ChallengeDropdownPr
                   description="Horizontally flipped text"
                 />
                 <CheckboxItem 
-                  label="Rhythm Mode"
-                  checked={settings.rhythmMode}
-                  onToggle={() => handleToggle('rhythmMode')}
-                  description="Type to the beat"
+                  label="Moving Target"
+                  checked={settings.movingTarget}
+                  onToggle={() => handleToggle('movingTarget')}
+                  description="Text box floats around"
                 />
               </div>
             </div>
@@ -388,6 +435,18 @@ const ChallengeDropdown = ({ settings, onChange, disabled }: ChallengeDropdownPr
                   checked={settings.staminaMode}
                   onToggle={() => handleToggle('staminaMode')}
                   description="Minimum 5-minute test"
+                />
+                <CheckboxItem 
+                  label="Encryption"
+                  checked={settings.encryption}
+                  onToggle={() => handleToggle('encryption')}
+                  description="Text displayed as symbols"
+                />
+                <CheckboxItem 
+                  label="Hardcore Mode"
+                  checked={settings.hardcoreMode}
+                  onToggle={() => handleToggle('hardcoreMode')}
+                  description="One mistake = game over"
                 />
               </div>
             </div>

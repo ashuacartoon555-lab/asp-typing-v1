@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { storageManager } from '@/lib/storageManager';
-import { Copy, Check, Share2 } from 'lucide-react';
+import { Copy, Check, Share2, Image } from 'lucide-react';
+import ShareCardGenerator from './ShareCardGenerator';
 
 const ChallengeLinksModal: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
@@ -9,6 +10,7 @@ const ChallengeLinksModal: React.FC = () => {
   const [targetWPM, setTargetWPM] = useState(50);
   const [generatedLink, setGeneratedLink] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showShareCardGen, setShowShareCardGen] = useState(false);
 
   const generateChallenge = () => {
     if (!selectedText.trim()) {
@@ -34,83 +36,6 @@ const ChallengeLinksModal: React.FC = () => {
   const shareToTwitter = () => {
     const text = `I just created a typing challenge! 🚀 Can you beat ${targetWPM} WPM?\n\n${generatedLink}`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
-  };
-
-  const downloadDataUrl = (dataUrl: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const generateChallengeShareCard = async () => {
-    const width = 1200;
-    const height = 630;
-    const canvas = document.createElement('canvas');
-    const scale = window.devicePixelRatio || 1;
-    canvas.width = width * scale;
-    canvas.height = height * scale;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.scale(scale, scale);
-
-    // Simple dark background
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '700 44px Segoe UI, Arial, sans-serif';
-    ctx.fillText('Typing Challenge', 70, 110);
-
-    ctx.fillStyle = '#22d3ee';
-    ctx.font = '700 36px Segoe UI, Arial, sans-serif';
-    ctx.fillText(`Target: ${targetWPM} WPM`, 70, 170);
-
-    ctx.fillStyle = '#e2e8f0';
-    ctx.font = '600 26px Segoe UI, Arial, sans-serif';
-    ctx.fillText(`Difficulty: ${difficulty}`, 70, 230);
-    ctx.fillText(`Text Length: ${selectedText.length} chars`, 70, 280);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '500 20px Segoe UI, Arial, sans-serif';
-    const preview = selectedText.trim().slice(0, 120);
-    ctx.fillText(`Preview: ${preview}${selectedText.length > 120 ? '…' : ''}`, 70, 340);
-
-    // Website badge
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(70, 450, 420, 60);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '600 22px Segoe UI, Arial, sans-serif';
-    ctx.fillText('onlinetypingtest.in', 90, 488);
-
-    // QR code
-    try {
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent('http://onlinetypingtest.in/')}`;
-      const qrImage = new Image();
-      qrImage.crossOrigin = 'anonymous';
-      const qrLoaded = new Promise<void>((resolve, reject) => {
-        qrImage.onload = () => resolve();
-        qrImage.onerror = () => reject(new Error('QR load failed'));
-      });
-      qrImage.src = qrUrl;
-      await qrLoaded;
-      ctx.drawImage(qrImage, 980, 420, 140, 140);
-    } catch {
-      // ignore QR errors
-    }
-
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        const dataUrl = canvas.toDataURL('image/png');
-        downloadDataUrl(dataUrl, `Typing_Challenge_${targetWPM}WPM.png`);
-        return;
-      }
-      const url = URL.createObjectURL(blob);
-      downloadDataUrl(url, `Typing_Challenge_${targetWPM}WPM.png`);
-      URL.revokeObjectURL(url);
-    }, 'image/png');
   };
 
   if (!showModal) {
@@ -245,10 +170,11 @@ const ChallengeLinksModal: React.FC = () => {
             </div>
 
             <button
-              onClick={generateChallengeShareCard}
-              className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-all text-sm mb-4"
+              onClick={() => setShowShareCardGen(true)}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-4 rounded-lg transition-all text-sm mb-4 flex items-center justify-center gap-2"
             >
-              Download Share Card
+              <Image className="w-5 h-5" />
+              Generate Share Card (Multiple Themes)
             </button>
 
             {/* Challenge Info */}
@@ -271,6 +197,23 @@ const ChallengeLinksModal: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Share Card Generator */}
+      {showShareCardGen && (
+        <ShareCardGenerator
+          data={{
+            type: 'challenge',
+            title: '🚀 Typing Challenge',
+            subtitle: 'Can you beat this?',
+            targetWPM: targetWPM,
+            difficulty: difficulty.charAt(0).toUpperCase() + difficulty.slice(1),
+            textPreview: selectedText,
+            textLength: selectedText.length,
+            link: generatedLink || 'https://onlinetypingtest.in',
+          }}
+          onClose={() => setShowShareCardGen(false)}
+        />
+      )}
     </div>
   );
 };

@@ -40,6 +40,24 @@ export interface WeaknessData {
   [key: string]: number;
 }
 
+export interface KeyLatencyData {
+  [key: string]: number[]; // character -> array of latencies in ms
+}
+
+export interface KeystrokeRecord {
+  char: string;
+  timestamp: number; // performance.now() value
+  index: number;
+}
+
+export interface GhostReplay {
+  keystrokes: KeystrokeRecord[];
+  wpm: number;
+  accuracy: number;
+  date: string;
+  totalTime: number;
+}
+
 export interface BootcampData {
   day: number;
   completed: number[];
@@ -463,6 +481,84 @@ class StorageManager {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * === KEY LATENCY TRACKING ===
+   */
+  getKeyLatencyData(): KeyLatencyData {
+    const data = localStorage.getItem(`${this.PREFIX}keyLatency`);
+    return data ? JSON.parse(data) : {};
+  }
+
+  saveKeyLatencyData(data: KeyLatencyData): void {
+    localStorage.setItem(`${this.PREFIX}keyLatency`, JSON.stringify(data));
+  }
+
+  updateKeyLatency(key: string, latency: number): void {
+    const data = this.getKeyLatencyData();
+    if (!data[key]) data[key] = [];
+    data[key].push(latency);
+    // Keep only last 20 entries per key
+    if (data[key].length > 20) data[key].shift();
+    this.saveKeyLatencyData(data);
+  }
+
+  getSlowKeys(thresholdMs: number = 250): { key: string; avgLatency: number }[] {
+    const data = this.getKeyLatencyData();
+    const slowKeys: { key: string; avgLatency: number }[] = [];
+    for (const [key, latencies] of Object.entries(data)) {
+      if (latencies.length >= 3) {
+        const avg = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+        if (avg > thresholdMs) {
+          slowKeys.push({ key, avgLatency: Math.round(avg) });
+        }
+      }
+    }
+    return slowKeys.sort((a, b) => b.avgLatency - a.avgLatency);
+  }
+
+  getAllKeyLatencies(): { key: string; avgLatency: number; count: number }[] {
+    const data = this.getKeyLatencyData();
+    return Object.entries(data)
+      .filter(([_, latencies]) => latencies.length >= 2)
+      .map(([key, latencies]) => ({
+        key,
+        avgLatency: Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length),
+        count: latencies.length
+      }))
+      .sort((a, b) => b.avgLatency - a.avgLatency);
+  }
+
+  /**
+   * === GHOST REPLAY ===
+   */
+  getBestGhostReplay(): GhostReplay | null {
+    const data = localStorage.getItem(`${this.PREFIX}ghostReplay`);
+    return data ? JSON.parse(data) : null;
+  }
+
+  saveGhostReplay(replay: GhostReplay): void {
+    const existing = this.getBestGhostReplay();
+    // Only save if it's a new PB or no previous replay exists
+    if (!existing || replay.wpm > existing.wpm) {
+      localStorage.setItem(`${this.PREFIX}ghostReplay`, JSON.stringify(replay));
+    }
+  }
+
+  /**
+   * === PROMPT CRAFTING SCORES ===
+   */
+  getPromptCraftingScores(): { score: string; wpm: number; date: string }[] {
+    const data = localStorage.getItem(`${this.PREFIX}promptCraftingScores`);
+    return data ? JSON.parse(data) : [];
+  }
+
+  savePromptCraftingScore(entry: { score: string; wpm: number; date: string }): void {
+    const scores = this.getPromptCraftingScores();
+    scores.push(entry);
+    if (scores.length > 50) scores.shift();
+    localStorage.setItem(`${this.PREFIX}promptCraftingScores`, JSON.stringify(scores));
   }
 
   /**

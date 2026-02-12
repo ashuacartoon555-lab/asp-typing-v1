@@ -1,8 +1,8 @@
-import { Trophy, PlusCircle, Share2, Save, Download } from 'lucide-react';
+import { Trophy, PlusCircle, Share2, Save, Award } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { jsPDF } from 'jspdf';
 import ErrorAnalysis from './ErrorAnalysis';
+import CertificateGenerator from '@/components/CertificateGenerator';
 
 interface ResultDisplayProps {
   result: {
@@ -22,8 +22,7 @@ interface ResultDisplayProps {
 }
 
 const ResultDisplay = ({ result, motivation, onNewTest, promptText = '', inputValue = '' }: ResultDisplayProps) => {
-  const [isCertificateOpen, setIsCertificateOpen] = useState(false);
-  const [certificateName, setCertificateName] = useState('');
+  const [showCertificateGenerator, setShowCertificateGenerator] = useState(false);
   const [isShareCardOpen, setIsShareCardOpen] = useState(false);
   const [shareName, setShareName] = useState('Your Result');
   const [shareTheme, setShareTheme] = useState<'teal' | 'purple' | 'gold'>('teal');
@@ -62,13 +61,6 @@ const ResultDisplay = ({ result, motivation, onNewTest, promptText = '', inputVa
     localStorage.setItem('typingTestHistory', JSON.stringify(history.slice(0, 50)));
     toast.success('Result saved to history!');
   };
-
-  const blobToDataUrl = (blob: Blob) => new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error('Failed to read QR image'));
-    reader.readAsDataURL(blob);
-  });
 
   const downloadDataUrl = (dataUrl: string, filename: string) => {
     const link = document.createElement('a');
@@ -180,192 +172,6 @@ const ResultDisplay = ({ result, motivation, onNewTest, promptText = '', inputVa
       URL.revokeObjectURL(url);
       toast.success('Share card generated.');
     }, 'image/png');
-  };
-
-  const handleDownloadCertificate = async () => {
-    const name = certificateName.trim();
-    if (!name) {
-      toast.error('Please enter your name to download the certificate.');
-      return;
-    }
-
-    const wpm = result.wpm;
-    const accuracy = result.accuracy;
-    const date = new Date(result.date).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-
-    let level = 'Beginner';
-    if (wpm >= 65) level = 'Typing Master';
-    else if (wpm >= 46) level = 'Professional';
-    else if (wpm >= 36) level = 'Skilled';
-    else if (wpm >= 26) level = 'Average';
-
-    const verifyParams = new URLSearchParams({
-      name,
-      wpm: String(wpm),
-      accuracy: String(accuracy),
-      date,
-      level
-    });
-    const verifyURL = `https://onlinetypingtest.in/?${verifyParams.toString()}`;
-
-    const qrResponse = await fetch(
-      `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(verifyURL)}`
-    );
-    const qrBlob = await qrResponse.blob();
-    const qrDataUrl = await blobToDataUrl(qrBlob);
-
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-    const theme = level === 'Typing Master'
-      ? {
-          background: [255, 249, 232] as const,
-          border: [194, 148, 58] as const,
-          title: [143, 96, 30] as const,
-          name: [120, 70, 18] as const,
-          body: [110, 95, 70] as const,
-          watermark: [230, 214, 178] as const,
-          seal: [212, 175, 55] as const,
-          footer: [143, 96, 30] as const,
-          text: [0, 0, 0] as const
-        }
-      : level === 'Professional'
-      ? {
-          background: [244, 238, 255] as const,
-          border: [118, 90, 168] as const,
-          title: [94, 64, 140] as const,
-          name: [72, 44, 120] as const,
-          body: [96, 84, 115] as const,
-          watermark: [210, 198, 232] as const,
-          seal: [212, 175, 55] as const,
-          footer: [94, 64, 140] as const,
-          text: [0, 0, 0] as const
-        }
-      : level === 'Skilled'
-      ? {
-          background: [238, 252, 240] as const,
-          border: [66, 148, 90] as const,
-          title: [44, 120, 70] as const,
-          name: [34, 100, 60] as const,
-          body: [80, 100, 90] as const,
-          watermark: [200, 228, 210] as const,
-          seal: [52, 166, 86] as const,
-          footer: [44, 120, 70] as const,
-          text: [0, 0, 0] as const
-        }
-      : level === 'Average'
-      ? {
-          background: [235, 245, 255] as const,
-          border: [60, 118, 200] as const,
-          title: [35, 90, 170] as const,
-          name: [20, 70, 140] as const,
-          body: [80, 100, 120] as const,
-          watermark: [200, 220, 245] as const,
-          seal: [60, 118, 200] as const,
-          footer: [35, 90, 170] as const,
-          text: [0, 0, 0] as const
-        }
-      : {
-          background: [242, 242, 242] as const,
-          border: [130, 130, 130] as const,
-          title: [90, 90, 90] as const,
-          name: [70, 70, 70] as const,
-          body: [95, 95, 95] as const,
-          watermark: [210, 210, 210] as const,
-          seal: [160, 160, 160] as const,
-          footer: [90, 90, 90] as const,
-          text: [0, 0, 0] as const
-        };
-
-    // Background
-    doc.setFillColor(...theme.background);
-    doc.rect(0, 0, 210, 297, 'F');
-
-    // Border
-    doc.setDrawColor(...theme.border);
-    doc.setLineWidth(3);
-    doc.rect(10, 10, 190, 277);
-    doc.setLineWidth(1);
-    doc.rect(14, 14, 182, 269);
-
-    // Watermark
-    doc.setTextColor(...theme.watermark);
-    doc.setFontSize(48);
-    doc.text('onlinetypingtest.in', 105, 180, { angle: 28, align: 'center' });
-
-    // Title
-    doc.setTextColor(...theme.title);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(34);
-    doc.text('CERTIFICATE', 105, 55, { align: 'center' });
-    doc.setFontSize(18);
-    doc.text('OF ACHIEVEMENT', 105, 70, { align: 'center' });
-
-    // Presented to
-    doc.setFontSize(16);
-    doc.setTextColor(...theme.text);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Proudly Presented To', 105, 95, { align: 'center' });
-
-    // Name
-    doc.setFontSize(30);
-    doc.setTextColor(...theme.name);
-    doc.setFont('helvetica', 'bold');
-    doc.text(name, 105, 115, { align: 'center' });
-
-    // Description
-    doc.setFontSize(14);
-    doc.setTextColor(...theme.body);
-    doc.setFont('helvetica', 'normal');
-    doc.text(
-      'For successfully completing the typing test with excellent performance.',
-      105,
-      135,
-      { align: 'center', maxWidth: 160 }
-    );
-
-    // Stats
-    doc.setFontSize(16);
-    doc.setTextColor(...theme.text);
-    doc.text(`Typing Speed: ${wpm} WPM`, 105, 155, { align: 'center' });
-    doc.text(`Accuracy: ${accuracy}%`, 105, 168, { align: 'center' });
-    doc.text(`Level: ${level}`, 105, 181, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(`CPM: ${result.cpm || 0}  |  Gross WPM: ${result.grossWpm || 0}  |  Net WPM: ${result.netWpm || 0}`, 105, 194, { align: 'center' });
-    doc.setFontSize(14);
-    doc.text(`Date: ${date}`, 105, 207, { align: 'center' });
-
-    // QR
-    doc.addImage(qrDataUrl, 'PNG', 80, 215, 50, 50);
-
-    // Signature lines
-    doc.setDrawColor(...theme.text);
-    doc.line(30, 250, 80, 250);
-    doc.line(130, 250, 180, 250);
-    doc.setFontSize(11);
-    doc.text('Authorized Signature', 55, 257, { align: 'center' });
-    doc.text('Official Stamp', 155, 257, { align: 'center' });
-
-    // Gold seal
-    doc.setFillColor(...theme.seal);
-    doc.circle(175, 85, 10, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
-    doc.text('SEAL', 175, 87, { align: 'center' });
-
-    // Footer
-    doc.setTextColor(...theme.footer);
-    doc.setFontSize(12);
-    doc.text('www.onlinetypingtest.in', 105, 275, { align: 'center' });
-
-    doc.save(`Typing_Certificate_${name.replace(/\s+/g, '_')}.pdf`);
-
-    toast.success('Certificate downloaded successfully!');
-    setIsCertificateOpen(false);
-    setCertificateName('');
   };
 
   return (
@@ -483,49 +289,30 @@ const ResultDisplay = ({ result, motivation, onNewTest, promptText = '', inputVa
           <Save className="w-4 h-4 sm:w-5 sm:h-5" /> Save
         </button>
         <button 
-          onClick={() => setIsCertificateOpen(true)}
-          className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-muted text-foreground rounded-xl text-sm sm:text-base font-semibold hover:-translate-y-1 hover:shadow-md transition-all"
+          onClick={() => setShowCertificateGenerator(true)}
+          className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/30 rounded-xl text-sm sm:text-base font-semibold hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/20 transition-all"
         >
-          <Download className="w-4 h-4 sm:w-5 sm:h-5" /> Certificate
+          <Award className="w-4 h-4 sm:w-5 sm:h-5" /> Get Certificate
         </button>
       </div>
 
-      {isCertificateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-background w-full max-w-md rounded-2xl border border-border p-6 shadow-xl">
-            <h3 className="text-lg font-semibold mb-2">Download Certificate</h3>
-            <p className="text-sm text-muted-foreground mb-4">Enter your name to generate your certificate.</p>
-            <input
-              type="text"
-              value={certificateName}
-              onChange={(e) => setCertificateName(e.target.value)}
-              placeholder="Enter your name"
-              className="w-full px-4 py-3 rounded-xl bg-muted text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary/40"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="words"
-              spellCheck={false}
-            />
-            <div className="flex gap-3 justify-end mt-5">
-              <button
-                onClick={() => {
-                  setIsCertificateOpen(false);
-                  setCertificateName('');
-                }}
-                className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDownloadCertificate}
-                disabled={!certificateName.trim()}
-                className="px-4 py-2 rounded-lg gradient-bg text-primary-foreground font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Download Certificate
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Certificate Generator */}
+      {showCertificateGenerator && (
+        <CertificateGenerator
+          data={{
+            name: prompt('Enter your name for the certificate:') || 'Participant',
+            testType: 'Typing Speed Test',
+            wpm: result.wpm,
+            accuracy: result.accuracy,
+            date: new Date(result.date).toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            }),
+            duration: `${result.timeTaken}s`,
+          }}
+          onClose={() => setShowCertificateGenerator(false)}
+        />
       )}
 
       {isShareCardOpen && (

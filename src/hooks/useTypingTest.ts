@@ -63,6 +63,7 @@ interface UseTypingTestReturn {
   motivation: { emoji: string; text: string } | null;
   customText: string;
   infiniteMode: boolean;
+  keystrokeRecords: { char: string; timestamp: number; index: number }[];
   setInputValue: (value: string) => void;
   setDifficulty: (difficulty: Difficulty) => void;
   setTotalTime: (time: number) => void;
@@ -75,6 +76,7 @@ interface UseTypingTestReturn {
   finishTest: () => void;
   loadNewPrompt: () => void;
   getCharClasses: () => { char: string; className: string }[];
+  setPromptText: (text: string) => void;
 }
 
 const FALLBACK_QUOTES = [
@@ -111,6 +113,11 @@ export function useTypingTest(): UseTypingTestReturn {
   const promptTextRef = useRef<string>('');
   const isLoadingRef = useRef<boolean>(false);
   const lastLoadPositionRef = useRef<number>(0);
+
+  // Keystroke latency tracking (performance.now())
+  const lastKeyTimeRef = useRef<number>(0);
+  const keystrokeRecordsRef = useRef<{ char: string; timestamp: number; index: number }[]>([]);
+  const testStartPerfTimeRef = useRef<number>(0);
 
   const { playSound } = useSound();
 
@@ -681,6 +688,24 @@ export function useTypingTest(): UseTypingTestReturn {
     if (value.length > lastInputLengthRef.current) {
       const typedChar = value[value.length - 1];
       const expectedChar = promptText[value.length - 1];
+
+      // Track keystroke latency using performance.now()
+      const now = performance.now();
+      if (lastKeyTimeRef.current > 0) {
+        const latency = now - lastKeyTimeRef.current;
+        // Record per-key latency (only for reasonable latencies < 3 seconds)
+        if (latency < 3000 && expectedChar) {
+          storageManager.updateKeyLatency(expectedChar.toLowerCase(), Math.round(latency));
+        }
+      }
+      lastKeyTimeRef.current = now;
+
+      // Record keystroke for ghost replay
+      keystrokeRecordsRef.current.push({
+        char: typedChar,
+        timestamp: now - testStartPerfTimeRef.current,
+        index: value.length - 1
+      });
       
       try {
         if (typedChar !== expectedChar) {
@@ -747,6 +772,17 @@ export function useTypingTest(): UseTypingTestReturn {
         errorsCount: errors,
         weakKeys: weakKeys.slice(0, 10) // Top 10 weak keys
       });
+
+      // Save ghost replay for PB racing
+      if (keystrokeRecordsRef.current.length > 0) {
+        storageManager.saveGhostReplay({
+          keystrokes: keystrokeRecordsRef.current,
+          wpm,
+          accuracy,
+          date: testDate,
+          totalTime: displayTime
+        });
+      }
 
       storageManager.updatePersonalBests({
         wpm,
@@ -815,6 +851,11 @@ export function useTypingTest(): UseTypingTestReturn {
     console.log('🎯 Test ready - waiting for first keystroke to start timer');
     setTestReady(true);
     setTestStarted(false); // Timer not started yet
+    
+    // Reset keystroke tracking for new test
+    lastKeyTimeRef.current = 0;
+    keystrokeRecordsRef.current = [];
+    testStartPerfTimeRef.current = performance.now();
     
     // Load fresh text in background (non-blocking)
     if (difficulty !== 'custom') {
@@ -898,6 +939,7 @@ export function useTypingTest(): UseTypingTestReturn {
     motivation,
     customText,
     infiniteMode,
+    keystrokeRecords: keystrokeRecordsRef.current,
     setInputValue,
     setDifficulty,
     setTotalTime,
@@ -909,6 +951,7 @@ export function useTypingTest(): UseTypingTestReturn {
     resetTest,
     finishTest,
     loadNewPrompt,
-    getCharClasses
+    getCharClasses,
+    setPromptText
   };
 }

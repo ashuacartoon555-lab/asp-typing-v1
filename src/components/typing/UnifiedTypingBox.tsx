@@ -24,6 +24,7 @@ interface UnifiedTypingBoxProps {
   language?: Language;
   testConfig?: TestConfigInfo;
   memoryModeHidden?: boolean;
+  getCharOpacity?: (charIndex: number) => number;
 }
 
 const UnifiedTypingBox = ({
@@ -37,7 +38,8 @@ const UnifiedTypingBox = ({
   onNewPrompt,
   language = 'english',
   testConfig,
-  memoryModeHidden = false
+  memoryModeHidden = false,
+  getCharOpacity
 }: UnifiedTypingBoxProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -331,8 +333,12 @@ const UnifiedTypingBox = ({
       // Cursor indicator - soft glowing bar
       const isCursor = absIdx === inputValue.length;
       
+      // Apply podcast mode opacity (blind transcription)
+      const charOpacity = getCharOpacity ? getCharOpacity(absIdx) : undefined;
+      const opacityStyle: React.CSSProperties = charOpacity !== undefined ? { opacity: charOpacity } : {};
+      
       return (
-        <span key={idx} className={`${cls} relative`} style={errorStyle}>
+        <span key={idx} className={`${cls} relative`} style={{ ...errorStyle, ...opacityStyle }}>
           {isCursor && (
             <span 
               className="cursor absolute left-0 top-0 w-[2px] h-full rounded-full"
@@ -480,8 +486,11 @@ const UnifiedTypingBox = ({
             
             {/* Header */}
             <div className="text-center pt-2 pb-1 px-4 flex-shrink-0">
-              <h3 className="text-xs font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent tracking-wide uppercase">
+              <h3 className="text-xs font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent tracking-wide uppercase flex items-center justify-center gap-2">
                 ⚡ 25 Typing Challenges
+                <span className="text-[9px] px-2 py-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full font-bold animate-pulse shadow-lg shadow-cyan-500/50">
+                  4 NEW!
+                </span>
               </h3>
               <p className="text-[9px] text-gray-500 mt-0.5">Pick one from the dropdown above & level up your skills</p>
             </div>
@@ -490,35 +499,44 @@ const UnifiedTypingBox = ({
             <div className="flex-1 overflow-hidden relative px-2 pb-1">
               <div className="grid grid-cols-5 gap-1 h-full auto-rows-fr">
                 {[
-                  { emoji: '📝', name: 'One Line', color: 'from-purple-500/20 to-purple-900/20', border: 'border-purple-500/30', text: 'text-purple-300' },
-                  { emoji: '🔦', name: 'Focus Strip', color: 'from-cyan-500/20 to-cyan-900/20', border: 'border-cyan-500/30', text: 'text-cyan-300' },
-                  { emoji: '🧘', name: 'Calm Mode', color: 'from-green-500/20 to-green-900/20', border: 'border-green-500/30', text: 'text-green-300' },
-                  { emoji: '👻', name: 'Ghost Text', color: 'from-gray-500/20 to-gray-900/20', border: 'border-gray-500/30', text: 'text-gray-300' },
-                  { emoji: '🚫', name: 'No Backspace', color: 'from-red-500/20 to-red-900/20', border: 'border-red-500/30', text: 'text-red-300' },
-                  { emoji: '🧊', name: 'Error Freeze', color: 'from-sky-500/20 to-sky-900/20', border: 'border-sky-500/30', text: 'text-sky-300' },
-                  { emoji: '🔒', name: 'Speed Lock', color: 'from-emerald-500/20 to-emerald-900/20', border: 'border-emerald-500/30', text: 'text-emerald-300' },
-                  { emoji: '💀', name: 'Last Chance', color: 'from-yellow-500/20 to-yellow-900/20', border: 'border-yellow-500/30', text: 'text-yellow-300' },
-                  { emoji: '🔄', name: 'Reverse', color: 'from-violet-500/20 to-violet-900/20', border: 'border-violet-500/30', text: 'text-violet-300' },
-                  { emoji: '🔀', name: 'Word Shuffle', color: 'from-pink-500/20 to-pink-900/20', border: 'border-pink-500/30', text: 'text-pink-300' },
-                  { emoji: '💫', name: 'Sudden Shift', color: 'from-orange-500/20 to-orange-900/20', border: 'border-orange-500/30', text: 'text-orange-300' },
-                  { emoji: '✨', name: 'Vanishing', color: 'from-slate-500/20 to-slate-900/20', border: 'border-slate-500/30', text: 'text-slate-300' },
-                  { emoji: '🧠', name: 'Memory', color: 'from-indigo-500/20 to-indigo-900/20', border: 'border-indigo-500/30', text: 'text-indigo-300' },
-                  { emoji: '🙈', name: 'Blind Start', color: 'from-amber-500/20 to-amber-900/20', border: 'border-amber-500/30', text: 'text-amber-300' },
-                  { emoji: '🪞', name: 'Mirror', color: 'from-fuchsia-500/20 to-fuchsia-900/20', border: 'border-fuchsia-500/30', text: 'text-fuchsia-300' },
-                  { emoji: '🎯', name: 'Moving Target', color: 'from-orange-500/20 to-red-900/20', border: 'border-orange-500/30', text: 'text-orange-300' },
-                  { emoji: '🔥', name: 'Turbo End', color: 'from-red-500/20 to-orange-900/20', border: 'border-red-500/30', text: 'text-red-300' },
-                  { emoji: '⏳', name: 'Pressure', color: 'from-amber-500/20 to-red-900/20', border: 'border-amber-500/30', text: 'text-amber-300' },
-                  { emoji: '💪', name: 'Stamina', color: 'from-emerald-500/20 to-teal-900/20', border: 'border-emerald-500/30', text: 'text-emerald-300' },
-                  { emoji: '🔐', name: 'Encryption', color: 'from-purple-500/20 to-indigo-900/20', border: 'border-purple-500/30', text: 'text-purple-300' },
-                  { emoji: '🎧', name: 'Podcast', color: 'from-blue-500/20 to-indigo-900/20', border: 'border-blue-500/30', text: 'text-blue-300' },
-                  { emoji: '✍️', name: 'Prompt Craft', color: 'from-teal-500/20 to-green-900/20', border: 'border-teal-500/30', text: 'text-teal-300' },
-                  { emoji: '🤖', name: 'AI Heatmap', color: 'from-blue-500/20 to-cyan-900/20', border: 'border-blue-500/30', text: 'text-blue-300' },
-                  { emoji: '👤', name: 'Ghost Race', color: 'from-slate-500/20 to-gray-900/20', border: 'border-slate-500/30', text: 'text-slate-300' },
-                  { emoji: '☠️', name: 'Hardcore', color: 'from-red-600/20 to-red-950/20', border: 'border-red-600/30', text: 'text-red-400' },
+                  { emoji: '📝', name: 'One Line', color: 'from-purple-500/20 to-purple-900/20', border: 'border-purple-500/30', text: 'text-purple-300', isNew: false },
+                  { emoji: '🔦', name: 'Focus Strip', color: 'from-cyan-500/20 to-cyan-900/20', border: 'border-cyan-500/30', text: 'text-cyan-300', isNew: false },
+                  { emoji: '🧘', name: 'Calm Mode', color: 'from-green-500/20 to-green-900/20', border: 'border-green-500/30', text: 'text-green-300', isNew: false },
+                  { emoji: '👻', name: 'Ghost Text', color: 'from-gray-500/20 to-gray-900/20', border: 'border-gray-500/30', text: 'text-gray-300', isNew: false },
+                  { emoji: '🚫', name: 'No Backspace', color: 'from-red-500/20 to-red-900/20', border: 'border-red-500/30', text: 'text-red-300', isNew: false },
+                  { emoji: '🧊', name: 'Error Freeze', color: 'from-sky-500/20 to-sky-900/20', border: 'border-sky-500/30', text: 'text-sky-300', isNew: false },
+                  { emoji: '🔒', name: 'Speed Lock', color: 'from-emerald-500/20 to-emerald-900/20', border: 'border-emerald-500/30', text: 'text-emerald-300', isNew: false },
+                  { emoji: '💀', name: 'Last Chance', color: 'from-yellow-500/20 to-yellow-900/20', border: 'border-yellow-500/30', text: 'text-yellow-300', isNew: false },
+                  { emoji: '🔄', name: 'Reverse', color: 'from-violet-500/20 to-violet-900/20', border: 'border-violet-500/30', text: 'text-violet-300', isNew: false },
+                  { emoji: '🔀', name: 'Word Shuffle', color: 'from-pink-500/20 to-pink-900/20', border: 'border-pink-500/30', text: 'text-pink-300', isNew: false },
+                  { emoji: '💫', name: 'Sudden Shift', color: 'from-orange-500/20 to-orange-900/20', border: 'border-orange-500/30', text: 'text-orange-300', isNew: false },
+                  { emoji: '✨', name: 'Vanishing', color: 'from-slate-500/20 to-slate-900/20', border: 'border-slate-500/30', text: 'text-slate-300', isNew: false },
+                  { emoji: '🧠', name: 'Memory', color: 'from-indigo-500/20 to-indigo-900/20', border: 'border-indigo-500/30', text: 'text-indigo-300', isNew: false },
+                  { emoji: '🙈', name: 'Blind Start', color: 'from-amber-500/20 to-amber-900/20', border: 'border-amber-500/30', text: 'text-amber-300', isNew: false },
+                  { emoji: '🪞', name: 'Mirror', color: 'from-fuchsia-500/20 to-fuchsia-900/20', border: 'border-fuchsia-500/30', text: 'text-fuchsia-300', isNew: false },
+                  { emoji: '🎯', name: 'Moving Target', color: 'from-orange-500/20 to-red-900/20', border: 'border-orange-500/30', text: 'text-orange-300', isNew: false },
+                  { emoji: '🔥', name: 'Turbo End', color: 'from-red-500/20 to-orange-900/20', border: 'border-red-500/30', text: 'text-red-300', isNew: false },
+                  { emoji: '⏳', name: 'Pressure', color: 'from-amber-500/20 to-red-900/20', border: 'border-amber-500/30', text: 'text-amber-300', isNew: false },
+                  { emoji: '💪', name: 'Stamina', color: 'from-emerald-500/20 to-teal-900/20', border: 'border-emerald-500/30', text: 'text-emerald-300', isNew: false },
+                  { emoji: '🔐', name: 'Encryption', color: 'from-purple-500/20 to-indigo-900/20', border: 'border-purple-500/30', text: 'text-purple-300', isNew: false },
+                  { emoji: '🎧', name: 'Podcast', color: 'from-blue-500/30 to-indigo-900/30', border: 'border-blue-400/50', text: 'text-blue-200', isNew: true },
+                  { emoji: '✍️', name: 'Prompt Craft', color: 'from-teal-500/30 to-green-900/30', border: 'border-teal-400/50', text: 'text-teal-200', isNew: true },
+                  { emoji: '🤖', name: 'AI Heatmap', color: 'from-cyan-500/30 to-blue-900/30', border: 'border-cyan-400/50', text: 'text-cyan-200', isNew: true },
+                  { emoji: '👤', name: 'Ghost Race', color: 'from-slate-500/30 to-gray-900/30', border: 'border-slate-400/50', text: 'text-slate-200', isNew: true },
+                  { emoji: '☠️', name: 'Hardcore', color: 'from-red-600/20 to-red-950/20', border: 'border-red-600/30', text: 'text-red-400', isNew: false },
                 ].map((c, i) => (
-                  <div key={i} className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-md bg-gradient-to-b ${c.color} border ${c.border}`}>
-                    <span className="text-sm leading-none">{c.emoji}</span>
-                    <span className={`text-[8px] font-medium mt-0.5 ${c.text} whitespace-nowrap`}>{c.name}</span>
+                  <div 
+                    key={i} 
+                    className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-md bg-gradient-to-b ${c.color} border ${c.border} relative ${c.isNew ? 'shadow-[0_0_15px_rgba(6,182,212,0.3)] animate-pulse' : ''}`}
+                    style={c.isNew ? { animationDuration: '3s' } : {}}
+                  >
+                    {c.isNew && (
+                      <span className="absolute -top-1 -right-1 text-[7px] font-bold bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-1 rounded-full shadow-lg">
+                        NEW
+                      </span>
+                    )}
+                    <span className={`text-sm leading-none ${c.isNew ? 'scale-110' : ''}`}>{c.emoji}</span>
+                    <span className={`text-[8px] font-medium mt-0.5 ${c.text} whitespace-nowrap ${c.isNew ? 'font-bold' : ''}`}>{c.name}</span>
                   </div>
                 ))}
               </div>

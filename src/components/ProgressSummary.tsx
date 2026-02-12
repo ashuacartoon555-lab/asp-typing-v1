@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTypingHistory } from '@/hooks/useTypingHistory';
-import { TrendingUp, Target } from 'lucide-react';
+import { TrendingUp, Target, Download } from 'lucide-react';
+import CertificateGenerator from './CertificateGenerator';
 
 const ProgressSummary: React.FC = () => {
   const { history, stats, getTypingLevel, getImprovementPercent } = useTypingHistory();
+  const [showCertGen, setShowCertGen] = useState(false);
 
   if (history.length === 0) return null;
 
@@ -12,6 +14,16 @@ const ProgressSummary: React.FC = () => {
   const firstTest = history[0];
   const latestTest = history[history.length - 1];
 
+  // Calculate grade based on performance
+  const getGrade = () => {
+    if (latestTest.wpm >= 70 && latestTest.accuracy >= 95) return 'A+';
+    if (latestTest.wpm >= 60 && latestTest.accuracy >= 90) return 'A';
+    if (latestTest.wpm >= 50 && latestTest.accuracy >= 85) return 'B+';
+    if (latestTest.wpm >= 40 && latestTest.accuracy >= 80) return 'B';
+    if (latestTest.wpm >= 30) return 'C';
+    return 'D';
+  };
+
   return (
     <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 rounded-xl p-8 border border-indigo-700 relative overflow-hidden">
       {/* Decorative background elements */}
@@ -19,9 +31,18 @@ const ProgressSummary: React.FC = () => {
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl" />
       
       <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-6">
-          <TrendingUp className="w-8 h-8 text-yellow-400" />
-          <h2 className="text-3xl font-bold text-white">Your Progress Summary</h2>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <TrendingUp className="w-8 h-8 text-yellow-400" />
+            <h2 className="text-3xl font-bold text-white">Your Progress Summary</h2>
+          </div>
+          <button
+            onClick={() => setShowCertGen(true)}
+            className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold py-2 px-4 rounded-xl flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg"
+          >
+            <Download className="w-4 h-4" />
+            Download Report (PDF)
+          </button>
         </div>
 
         <div className="space-y-4 text-lg text-white/90">
@@ -77,6 +98,27 @@ const ProgressSummary: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Certificate Generator Modal */}
+      {showCertGen && (
+        <CertificateGenerator
+          data={{
+            name: prompt('Enter your name for the certificate:') || 'Participant',
+            testType: 'Progress Report',
+            wpm: latestTest.wpm,
+            accuracy: latestTest.accuracy,
+            grade: getGrade(),
+            score: Math.round((latestTest.wpm * latestTest.accuracy) / 100),
+            date: new Date().toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            }),
+            duration: `${stats.totalTests} tests completed`,
+          }}
+          onClose={() => setShowCertGen(false)}
+        />
+      )}
     </div>
   );
 };

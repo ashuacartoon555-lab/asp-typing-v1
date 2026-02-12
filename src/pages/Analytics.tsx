@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Download, FileText } from 'lucide-react';
 import Header from '@/components/typing/Header';
 import Footer from '@/components/typing/Footer';
 import AchievementBadges from '@/components/AchievementBadgesNew';
@@ -9,12 +10,16 @@ import PersonalBestCard from '@/components/PersonalBestCard';
 import ProgressSummary from '@/components/ProgressSummary';
 import LeaderboardLocal from '@/components/LeaderboardLocal';
 import ChallengeLinksModal from '@/components/ChallengeLinksModal';
+import ShareCardGenerator from '@/components/ShareCardGenerator';
+import CertificateGenerator from '@/components/CertificateGenerator';
 import { useTypingHistory } from '@/hooks/useTypingHistory';
 
 const Analytics: React.FC = () => {
   const { stats, history, getImprovementPercent } = useTypingHistory();
   const hasTests = history.length > 0;
   const improvementPercent = getImprovementPercent();
+  const [showReportGen, setShowReportGen] = React.useState(false);
+  const [showCertForTest, setShowCertForTest] = React.useState<any>(null);
 
   // Calculate extra stats
   const avgTimePerTest = hasTests ? Math.round(stats.totalTimeSpent / stats.totalTests) : 0;
@@ -35,31 +40,43 @@ const Analytics: React.FC = () => {
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
             
             <div className="relative z-10">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                <div>
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                {/* Left Side - Title and Button */}
+                <div className="flex-1">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-3">
                     <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
                       Your Typing Analytics
                     </span>
                   </h1>
-                  <p className="text-slate-300 text-sm sm:text-base max-w-xl">
+                  <p className="text-slate-300 text-sm sm:text-base mb-6 max-w-xl">
                     Track progress, unlock achievements, master challenges & climb the leaderboard
                   </p>
+                  
+                  {hasTests && (
+                    <button
+                      onClick={() => setShowReportGen(true)}
+                      className="bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700 text-white font-bold py-3 px-6 rounded-xl flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg"
+                    >
+                      <Download className="w-5 h-5" />
+                      Download Report
+                    </button>
+                  )}
                 </div>
 
+                {/* Right Side - Stat Boxes */}
                 {hasTests && (
-                  <div className="flex flex-wrap gap-2 sm:gap-3">
-                    <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl px-3 sm:px-5 py-2 sm:py-3 text-center min-w-[70px] sm:min-w-[90px]">
-                      <div className="text-lg sm:text-2xl font-bold text-cyan-400">{stats.totalTests}</div>
-                      <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider">Tests</div>
+                  <div className="flex gap-3 lg:gap-4">
+                    <div className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 backdrop-blur border border-cyan-400/20 rounded-xl px-6 py-4 text-center min-w-[100px] hover:border-cyan-400/40 transition-all">
+                      <div className="text-3xl font-bold text-cyan-400 mb-1">{stats.totalTests}</div>
+                      <div className="text-[10px] text-cyan-300/70 uppercase tracking-wider font-semibold">Tests</div>
                     </div>
-                    <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl px-3 sm:px-5 py-2 sm:py-3 text-center min-w-[70px] sm:min-w-[90px]">
-                      <div className="text-lg sm:text-2xl font-bold text-purple-400">{stats.bestWPM}</div>
-                      <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider">Best WPM</div>
+                    <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 backdrop-blur border border-purple-400/20 rounded-xl px-6 py-4 text-center min-w-[100px] hover:border-purple-400/40 transition-all">
+                      <div className="text-3xl font-bold text-purple-400 mb-1">{stats.bestWPM}</div>
+                      <div className="text-[10px] text-purple-300/70 uppercase tracking-wider font-semibold">Best WPM</div>
                     </div>
-                    <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl px-3 sm:px-5 py-2 sm:py-3 text-center min-w-[70px] sm:min-w-[90px]">
-                      <div className="text-lg sm:text-2xl font-bold text-emerald-400">{stats.averageAccuracy}%</div>
-                      <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider">Accuracy</div>
+                    <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 backdrop-blur border border-emerald-400/20 rounded-xl px-6 py-4 text-center min-w-[100px] hover:border-emerald-400/40 transition-all">
+                      <div className="text-3xl font-bold text-emerald-400 mb-1">{stats.averageAccuracy}%</div>
+                      <div className="text-[10px] text-emerald-300/70 uppercase tracking-wider font-semibold">Accuracy</div>
                     </div>
                   </div>
                 )}
@@ -67,22 +84,22 @@ const Analytics: React.FC = () => {
 
               {/* Quick stat pills */}
               {hasTests && (
-                <div className="flex flex-wrap gap-2 mt-5">
-                  <span className="px-3 py-1 bg-blue-500/15 border border-blue-500/25 rounded-full text-[11px] text-blue-300 font-medium">
+                <div className="flex flex-wrap gap-2 mt-6">
+                  <span className="px-4 py-2 bg-blue-500/15 border border-blue-500/25 rounded-full text-xs text-blue-300 font-medium backdrop-blur-sm">
                     ⏱ {totalMinutes} min total practice
                   </span>
-                  <span className="px-3 py-1 bg-amber-500/15 border border-amber-500/25 rounded-full text-[11px] text-amber-300 font-medium">
+                  <span className="px-4 py-2 bg-amber-500/15 border border-amber-500/25 rounded-full text-xs text-amber-300 font-medium backdrop-blur-sm">
                     📝 {stats.totalWordsTyped.toLocaleString()} words typed
                   </span>
-                  <span className="px-3 py-1 bg-emerald-500/15 border border-emerald-500/25 rounded-full text-[11px] text-emerald-300 font-medium">
+                  <span className="px-4 py-2 bg-emerald-500/15 border border-emerald-500/25 rounded-full text-xs text-emerald-300 font-medium backdrop-blur-sm">
                     📊 {stats.averageWPM} avg WPM
                   </span>
                   {history.length >= 2 && (
-                    <span className={`px-3 py-1 rounded-full text-[11px] font-medium ${improvementPercent > 0 ? 'bg-green-500/15 border border-green-500/25 text-green-300' : improvementPercent < 0 ? 'bg-red-500/15 border border-red-500/25 text-red-300' : 'bg-gray-500/15 border border-gray-500/25 text-gray-300'}`}>
+                    <span className={`px-4 py-2 rounded-full text-xs font-medium backdrop-blur-sm ${improvementPercent > 0 ? 'bg-green-500/15 border border-green-500/25 text-green-300' : improvementPercent < 0 ? 'bg-red-500/15 border border-red-500/25 text-red-300' : 'bg-gray-500/15 border border-gray-500/25 text-gray-300'}`}>
                       {improvementPercent > 0 ? '📈' : improvementPercent < 0 ? '📉' : '➡️'} {improvementPercent > 0 ? '+' : ''}{improvementPercent}% improvement
                     </span>
                   )}
-                  <span className="px-3 py-1 bg-purple-500/15 border border-purple-500/25 rounded-full text-[11px] text-purple-300 font-medium">
+                  <span className="px-4 py-2 bg-purple-500/15 border border-purple-500/25 rounded-full text-xs text-purple-300 font-medium backdrop-blur-sm">
                     🎯 {bestAccuracy}% best accuracy
                   </span>
                 </div>
@@ -227,7 +244,7 @@ const Analytics: React.FC = () => {
                   {history.slice(-8).reverse().map((test, idx) => (
                     <div 
                       key={idx}
-                      className="flex items-center justify-between bg-white/[0.03] rounded-lg px-4 py-3 border border-white/5 hover:border-white/10 transition-colors"
+                      className="flex items-center justify-between bg-white/[0.03] rounded-lg px-4 py-3 border border-white/5 hover:border-white/10 transition-colors group"
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-lg">
@@ -248,9 +265,19 @@ const Analytics: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">{test.wordsTyped} words</div>
-                        <div className="text-[10px] text-slate-500">{Math.round(test.timeElapsed)}s</div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-xs text-slate-400">{test.wordsTyped} words</div>
+                          <div className="text-[10px] text-slate-500">{Math.round(test.timeElapsed)}s</div>
+                        </div>
+                        <button
+                          onClick={() => setShowCertForTest(test)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-1.5 px-3 rounded-lg flex items-center gap-1.5 text-xs"
+                          title="Download certificate for this test"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          PDF
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -340,6 +367,44 @@ const Analytics: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Report Generator */}
+      {showReportGen && (
+        <ShareCardGenerator
+          data={{
+            type: 'analytics',
+            title: '📊 My Typing Analytics',
+            wpm: stats.averageWPM,
+            accuracy: stats.averageAccuracy,
+            tests: stats.totalTests,
+            bestWPM: stats.bestWPM,
+            totalWords: stats.totalWordsTyped,
+            link: 'https://onlinetypingtest.in',
+          }}
+          onClose={() => setShowReportGen(false)}
+        />
+      )}
+
+      {/* Certificate for specific test */}
+      {showCertForTest && (
+        <CertificateGenerator
+          data={{
+            name: prompt('Enter your name for the certificate:') || 'Participant',
+            testType: 'Typing Speed Test',
+            wpm: showCertForTest.wpm,
+            accuracy: showCertForTest.accuracy,
+            grade: showCertForTest.wpm >= 70 ? 'A+' : showCertForTest.wpm >= 60 ? 'A' : showCertForTest.wpm >= 50 ? 'B+' : showCertForTest.wpm >= 40 ? 'B' : 'C',
+            score: Math.round((showCertForTest.wpm * showCertForTest.accuracy) / 100),
+            date: new Date(showCertForTest.date).toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            }),
+            duration: `${Math.round(showCertForTest.timeElapsed)}s`,
+          }}
+          onClose={() => setShowCertForTest(null)}
+        />
+      )}
 
       <Footer />
     </div>

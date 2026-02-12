@@ -18,6 +18,9 @@ import { ChallengeSettings, defaultChallengeSettings } from '@/components/typing
 import { useTypingTest } from '@/hooks/useTypingTest';
 import { useSound } from '@/contexts/SoundContext';
 import { useChallengeMode } from '@/hooks/useChallengeMode';
+import { useGhostRacing } from '@/hooks/useGhostRacing';
+import { usePromptCrafting } from '@/hooks/usePromptCrafting';
+import { usePodcastMode } from '@/hooks/usePodcastMode';
 
 const Index = () => {
   const {
@@ -51,7 +54,9 @@ const Index = () => {
     resetTest,
     finishTest,
     loadNewPrompt,
-    getCharClasses
+    getCharClasses,
+    keystrokeRecords,
+    setPromptText
   } = useTypingTest();
 
   const { playSound } = useSound();
@@ -147,6 +152,47 @@ const Index = () => {
     totalTime,
     playSound,
   });
+
+  // Ghost Racing hook - race against your PB
+  const ghostRacing = useGhostRacing({
+    enabled: challengeSettings.ghostRacing,
+    testStarted,
+    inputValue,
+    promptText,
+    wpm,
+  });
+
+  // Prompt Crafting hook
+  const promptCrafting = usePromptCrafting();
+
+  // Podcast Mode hook - TTS + blind transcription
+  const podcastMode = usePodcastMode({
+    enabled: challengeSettings.podcastMode,
+    testStarted,
+    promptText,
+    inputValue,
+  });
+
+  // Prompt crafting result (evaluated post-test)
+  const [promptCraftingResult, setPromptCraftingResult] = useState<ReturnType<typeof promptCrafting.evaluatePrompt> | null>(null);
+
+  // Load prompt template when Prompt Crafting is enabled
+  useEffect(() => {
+    if (challengeSettings.promptCrafting && !testStarted && !testCompleted) {
+      const template = promptCrafting.getPromptTemplate();
+      setPromptText(template);
+    }
+  }, [challengeSettings.promptCrafting, testStarted, testCompleted]);
+
+  // Evaluate prompt crafting when test completes
+  useEffect(() => {
+    if (testCompleted && result && challengeSettings.promptCrafting) {
+      const evaluation = promptCrafting.evaluatePrompt(inputValue, result.wpm, result.accuracy);
+      setPromptCraftingResult(evaluation);
+    } else if (!testCompleted) {
+      setPromptCraftingResult(null);
+    }
+  }, [testCompleted, result, challengeSettings.promptCrafting]);
 
   // Apply text transformations for challenges (e.g., Reverse Words)
   const displayPromptText = useMemo(() => {
@@ -461,6 +507,7 @@ const Index = () => {
               onNewPrompt={loadNewPrompt}
               language={language}
               memoryModeHidden={challengeMode.memoryModeHidden}
+              getCharOpacity={challengeSettings.podcastMode ? podcastMode.getCharOpacity : undefined}
               testConfig={{
                 duration: totalTime,
                 mode: testMode,
@@ -484,6 +531,123 @@ const Index = () => {
               }}
             />
         </div>
+
+        {/* 🎧 Podcast Mode Controls - Show during test when podcast mode active */}
+        {challengeSettings.podcastMode && (testStarted || testReady) && (
+          <div className="glass p-3 sm:p-4 rounded-xl mb-4 border border-blue-500/30">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🎧</span>
+                <h3 className="text-sm font-bold text-blue-300">Podcast Mode - Listen & Type</h3>
+              </div>
+              {!podcastMode.ttsAvailable && (
+                <span className="text-[10px] text-red-400">TTS not available in this browser</span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              {/* Play/Pause */}
+              <button
+                onClick={podcastMode.togglePause}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-all"
+              >
+                {podcastMode.podcastState.isPaused ? '▶️ Resume' : '⏸ Pause'}
+              </button>
+
+              {/* Speed Control */}
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-muted-foreground">Speed:</span>
+                {podcastMode.SPEEDS.map(speed => (
+                  <button
+                    key={speed}
+                    onClick={() => podcastMode.setPlaybackSpeed(speed)}
+                    className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
+                      podcastMode.podcastState.playbackSpeed === speed
+                        ? 'bg-blue-500/40 text-blue-200 border border-blue-500/50'
+                        : 'bg-white/5 text-muted-foreground hover:bg-white/10'
+                    }`}
+                  >
+                    {speed}x
+                  </button>
+                ))}
+              </div>
+
+              {/* Progress */}
+              <div className="flex-1 min-w-[100px]">
+                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                    style={{ width: `${podcastMode.podcastState.progress}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Status */}
+              <span className={`text-[10px] font-medium ${
+                podcastMode.podcastState.isSpeaking ? 'text-green-400' : 'text-slate-500'
+              }`}>
+                {podcastMode.podcastState.isPaused ? '⏸ Paused' : podcastMode.podcastState.isSpeaking ? '🔊 Speaking' : '🔇 Ready'}
+              </span>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2">
+              💡 Text is hidden! Listen to the audio and type what you hear. Characters reveal as you type correctly.
+            </p>
+          </div>
+        )}
+
+        {/* 👤 Ghost Racing Dashboard - Show during test when ghost racing active */}
+        {challengeSettings.ghostRacing && testStarted && !testCompleted && (
+          <div className="glass p-3 sm:p-4 rounded-xl mb-4 border border-slate-500/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🏁</span>
+                <h3 className="text-sm font-bold">Ghost Race vs PB</h3>
+              </div>
+              {ghostRacing.ghostState.hasPB && (
+                <span className="text-[10px] text-muted-foreground">
+                  PB: {ghostRacing.ghostState.ghostWpm} WPM
+                </span>
+              )}
+            </div>
+
+            {ghostRacing.ghostState.hasPB ? (
+              <div className="mt-2 space-y-2">
+                {/* Race Track */}
+                <div className="relative h-8 rounded-full bg-white/5 overflow-hidden">
+                  {/* Ghost cursor */}
+                  <div
+                    className="absolute top-0 h-full bg-slate-500/30 rounded-full transition-all duration-150 flex items-center justify-end pr-1"
+                    style={{ width: `${Math.min(100, (ghostRacing.ghostState.ghostIndex / Math.max(promptText.length, 1)) * 100)}%` }}
+                  >
+                    <span className="text-[10px]">👻</span>
+                  </div>
+                  {/* User cursor */}
+                  <div
+                    className={`absolute top-0 h-full rounded-full transition-all duration-150 flex items-center justify-end pr-1 ${
+                      ghostRacing.ghostState.userAhead ? 'bg-green-500/30' : 'bg-red-500/30'
+                    }`}
+                    style={{ width: `${Math.min(100, (inputValue.length / Math.max(promptText.length, 1)) * 100)}%` }}
+                  >
+                    <span className="text-[10px]">🏃</span>
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div className="flex items-center justify-between text-xs">
+                  <span className={ghostRacing.ghostState.userAhead ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                    {ghostRacing.getRaceStatus()}
+                  </span>
+                  <span className="text-muted-foreground">
+                    You: {wpm} WPM | Ghost: {ghostRacing.ghostState.ghostWpm} WPM
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-2">
+                🏁 No PB recorded yet. Complete a test to create your ghost! Your best performance will be saved automatically.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Progress Bar - Only show during test (not after completion) */}
         {testStarted && !testCompleted && (
@@ -641,6 +805,24 @@ const Index = () => {
           </div>
         )}
 
+        {/* 🤖 AI Heatmap Live Indicator - Show during test when AI heatmap active */}
+        {challengeSettings.aiHeatmap && testStarted && !testCompleted && (
+          <div className="glass p-2 sm:p-3 rounded-xl mb-4 border border-blue-500/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm animate-pulse">🧠</span>
+                <span className="text-[10px] sm:text-xs font-medium text-blue-300">AI Tracking Active</span>
+              </div>
+              <span className="text-[9px] text-muted-foreground">
+                Recording per-key latency via <code className="bg-white/5 px-1 rounded">performance.now()</code>
+              </span>
+            </div>
+            <div className="mt-1 h-0.5 rounded-full bg-white/5 overflow-hidden">
+              <div className="h-full rounded-full bg-blue-500/50 animate-pulse" style={{ width: '100%' }} />
+            </div>
+          </div>
+        )}
+
         {/* Live Test Info Strip - Always visible during test */}
         {testStarted && !testCompleted && (
           <div className="mb-4">
@@ -766,6 +948,86 @@ const Index = () => {
                 inputValue={inputValue}
               />
             </div>
+
+            {/* ✍️ Prompt Crafting Results - Show after test if prompt crafting was active */}
+            {promptCraftingResult && (
+              <div className="glass p-4 sm:p-5 rounded-xl sm:rounded-2xl mb-4 sm:mb-6 border-2 border-teal-500/30">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">{promptCraftingResult.emoji}</span>
+                  <div>
+                    <h3 className="text-lg font-bold">
+                      <span className={promptCraftingResult.color}>{promptCraftingResult.label}</span>
+                    </h3>
+                    <p className="text-xs text-muted-foreground">Prompt Crafting Score</p>
+                  </div>
+                </div>
+
+                <p className="text-sm text-muted-foreground mb-3">{promptCraftingResult.feedback}</p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Keywords Found */}
+                  <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <div className="text-[10px] text-green-400 font-semibold mb-1">✅ Keywords Found ({promptCraftingResult.essentialFound.length})</div>
+                    <div className="flex flex-wrap gap-1">
+                      {promptCraftingResult.essentialFound.map((kw, i) => (
+                        <span key={i} className="px-1.5 py-0.5 rounded text-[9px] bg-green-500/20 text-green-300">{kw}</span>
+                      ))}
+                      {promptCraftingResult.essentialFound.length === 0 && (
+                        <span className="text-[10px] text-muted-foreground">None found</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Keywords Missed */}
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <div className="text-[10px] text-red-400 font-semibold mb-1">❌ Missing ({promptCraftingResult.essentialMissed.length})</div>
+                    <div className="flex flex-wrap gap-1">
+                      {promptCraftingResult.essentialMissed.slice(0, 5).map((kw, i) => (
+                        <span key={i} className="px-1.5 py-0.5 rounded text-[9px] bg-red-500/20 text-red-300">{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bonus Keywords */}
+                {promptCraftingResult.bonusFound.length > 0 && (
+                  <div className="mt-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                    <span className="text-[10px] text-purple-400 font-semibold">⭐ Bonus: </span>
+                    {promptCraftingResult.bonusFound.map((kw, i) => (
+                      <span key={i} className="px-1.5 py-0.5 rounded text-[9px] bg-purple-500/20 text-purple-300 ml-1">{kw}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 👤 Ghost Race Result - Show after test if ghost racing was active */}
+            {challengeSettings.ghostRacing && ghostRacing.ghostState.hasPB && (
+              <div className="glass p-4 sm:p-5 rounded-xl sm:rounded-2xl mb-4 sm:mb-6 border-2 border-slate-500/30">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🏁</span>
+                    <h3 className="text-lg font-bold">Ghost Race Result</h3>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="p-3 rounded-lg bg-white/5">
+                    <div className="text-[10px] text-muted-foreground mb-1">Your WPM</div>
+                    <div className="text-xl font-bold text-cyan-400">{result.wpm}</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-white/5">
+                    <div className="text-[10px] text-muted-foreground mb-1">Ghost PB</div>
+                    <div className="text-xl font-bold text-slate-400">{ghostRacing.ghostState.ghostWpm}</div>
+                  </div>
+                  <div className={`p-3 rounded-lg ${result.wpm > ghostRacing.ghostState.ghostWpm ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+                    <div className="text-[10px] text-muted-foreground mb-1">Result</div>
+                    <div className={`text-xl font-bold ${result.wpm > ghostRacing.ghostState.ghostWpm ? 'text-green-400' : 'text-red-400'}`}>
+                      {result.wpm > ghostRacing.ghostState.ghostWpm ? '🏆 NEW PB!' : result.wpm === ghostRacing.ghostState.ghostWpm ? '⚔️ TIE' : '👻 Ghost Wins'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Smart Suggestions - Performance Based */}
             <div className="glass p-4 sm:p-6 rounded-xl sm:rounded-2xl mb-4 sm:mb-6 border-2 border-cyan-500/30 animate-pulse-slow">
