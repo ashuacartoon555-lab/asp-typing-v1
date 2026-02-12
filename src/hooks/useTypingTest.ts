@@ -520,16 +520,28 @@ export function useTypingTest(): UseTypingTestReturn {
     isLoadingRef.current = true;
     
     try {
+      // For custom mode, repeat the user's custom text
+      if (difficulty === 'custom' && customText.trim()) {
+        setPromptText(prev => prev + ' ' + customText.trim());
+        isLoadingRef.current = false;
+        return;
+      }
+
       const nextText = await fetchModeText(testMode, language, difficulty, totalTime);
       setPromptText(prev => prev + " " + nextText);
       lastLoadPositionRef.current = (promptTextRef.current + " " + nextText).length;
     } catch {
-      const fallbackText = await fetchQuotesFromAPI();
-      setPromptText(prev => prev + " " + fallbackText);
+      // For custom mode fallback, repeat custom text
+      if (difficulty === 'custom' && customText.trim()) {
+        setPromptText(prev => prev + ' ' + customText.trim());
+      } else {
+        const fallbackText = await fetchQuotesFromAPI();
+        setPromptText(prev => prev + " " + fallbackText);
+      }
     } finally {
       isLoadingRef.current = false;
     }
-  }, [fetchModeText, fetchQuotesFromAPI, testMode, language, difficulty, totalTime]);
+  }, [fetchModeText, fetchQuotesFromAPI, testMode, language, difficulty, totalTime, customText]);
 
 
   const loadNewPrompt = useCallback(async () => {
@@ -625,15 +637,23 @@ export function useTypingTest(): UseTypingTestReturn {
   // Calculate elapsed time for display
   const elapsedTime = testStarted ? Math.round((Date.now() - startTimeRef.current) / 1000) : 0;
 
-  // Auto-load more text when user has typed 70% of current text (ALL MODES)
+  // Auto-load more text when user has typed 50% of current text (ALL MODES)
+  // More aggressive loading to prevent running out of text in challenge modes like Focus Master
   useEffect(() => {
     const shouldAutoLoad = 
       testStarted && 
-      inputValue.length > promptText.length * 0.7 && 
+      inputValue.length > promptText.length * 0.5 && 
       !isLoadingRef.current;
       
     if (shouldAutoLoad) {
       console.log('🔄 Auto-loading more text for current mode...');
+      loadMoreText();
+    }
+
+    // Emergency: if user has typed 90%+ and still no new text, force load
+    const isAlmostDone = testStarted && inputValue.length > promptText.length * 0.9;
+    if (isAlmostDone && !isLoadingRef.current) {
+      console.log('⚠️ Emergency text load - almost out of text!');
       loadMoreText();
     }
   }, [inputValue.length, promptText.length, testStarted, loadMoreText]);

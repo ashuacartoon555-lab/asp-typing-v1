@@ -148,6 +148,11 @@ const Index = () => {
     playSound,
   });
 
+  // Apply text transformations for challenges (e.g., Reverse Words)
+  const displayPromptText = useMemo(() => {
+    return challengeMode.transformPromptText(promptText);
+  }, [promptText, challengeMode.transformPromptText]);
+
   // Show toast with sound
   const showChallengeToast = useCallback((message: string, type: 'error' | 'success' | 'warning') => {
     setToast({ message, type });
@@ -373,20 +378,20 @@ const Index = () => {
                   )}
                   {challengeSettings.blindStart && (
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-500">👁️</span>
-                      <span>Blind Start - Text hidden at beginning</span>
+                      <span className="text-amber-500">👁️</span>
+                      <span>Blind Start - Text is blurred! Each character reveals as you type it correctly</span>
                     </div>
                   )}
                   {challengeSettings.vanishingWords && (
                     <div className="flex items-center gap-2">
                       <span className="text-cyan-500">✨</span>
-                      <span>Vanishing Words - Completed words fade away</span>
+                      <span>Vanishing Words - Correctly typed characters slowly fade away (ghost trail remains visible)</span>
                     </div>
                   )}
                   {challengeSettings.memoryMode && (
                     <div className="flex items-center gap-2">
                       <span className="text-indigo-500">🧠</span>
-                      <span>Memory Mode - Remember the text pattern</span>
+                      <span>Memory Mode - Text disappears after 5 seconds! Memorize and type from memory</span>
                     </div>
                   )}
                   {challengeSettings.focusStrip && (
@@ -398,7 +403,7 @@ const Index = () => {
                   {challengeSettings.reverseWords && (
                     <div className="flex items-center gap-2">
                       <span className="text-pink-500">🔄</span>
-                      <span>Reverse Words - Words appear backwards</span>
+                      <span>Reverse Words - Each word's letters are spelled backwards (e.g., "hello" → "olleh"). Type the reversed spelling!</span>
                     </div>
                   )}
                   {challengeSettings.wordShuffle && (
@@ -446,7 +451,7 @@ const Index = () => {
         {/* Unified Typing Box - Always show (auto-starts on first keypress) */}
         <div className="glass p-5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl mb-4">
           <UnifiedTypingBox
-              promptText={promptText}
+              promptText={displayPromptText}
               inputValue={inputValue}
               onInputChange={setInputValue}
               testStarted={testStarted}
@@ -455,6 +460,7 @@ const Index = () => {
               highlightWord={highlightWord}
               onNewPrompt={loadNewPrompt}
               language={language}
+              memoryModeHidden={challengeMode.memoryModeHidden}
               testConfig={{
                 duration: totalTime,
                 mode: testMode,

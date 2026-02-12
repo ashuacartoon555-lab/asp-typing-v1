@@ -4,6 +4,19 @@
 */
 
 /* ============================================
+   DEFAULT CHARACTER COLORS (no challenge)
+   ============================================ */
+.char.untyped {
+  color: #9ca3af;
+}
+.char.typed.correct {
+  color: #67e8f9;
+}
+.char.typed.error {
+  color: #fca5a5;
+}
+
+/* ============================================
    1. ONE LINE ONLY - Minimalist Purple Theme
    ============================================ */
 .challenge-one-line-only .text-container {
@@ -32,10 +45,31 @@
   opacity: 0;
   height: 0 !important;
   overflow: hidden;
+  display: none;
 }
 .challenge-one-line-only .typing-text .line.active {
   opacity: 1;
-  text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+  display: block;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 6px;
+  padding: 4px 12px;
+}
+/* Force white text - override Tailwind */
+.challenge-one-line-only .typing-text .line.active .char,
+.challenge-one-line-only .typing-text .line.active span.char,
+.challenge-one-line-only .typing-text .line.active span[class*="char"] {
+  color: white !important;
+  --tw-text-opacity: 1 !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+.challenge-one-line-only .typing-text .line.active .char.typed.correct,
+.challenge-one-line-only .typing-text .line.active span.typed.correct {
+  color: #a5b4fc !important;
+}
+.challenge-one-line-only .typing-text .line.active .char.typed.error,
+.challenge-one-line-only .typing-text .line.active span.typed.error {
+  color: #fb7185 !important;
 }
 
 /* ============================================
@@ -61,16 +95,32 @@
 }
 .challenge-focus-strip .line {
   opacity: 0.1 !important;
-  filter: blur(4px);
-  transition: all 0.4s ease;
+  filter: blur(3px);
+  transition: all 0.3s ease;
 }
 .challenge-focus-strip .line.active {
   opacity: 1 !important;
-  filter: blur(0);
-  text-shadow: 0 0 20px rgba(94, 234, 212, 0.6);
-  background: rgba(20, 184, 166, 0.1);
-  border-radius: 4px;
-  padding: 0 8px;
+  filter: none !important;
+  background: rgba(20, 184, 166, 0.2);
+  border-radius: 6px;
+  padding: 4px 12px;
+}
+/* Force bright white text on active line - override Tailwind */
+.challenge-focus-strip .line.active .char,
+.challenge-focus-strip .line.active span.char,
+.challenge-focus-strip .line.active span[class*="char"] {
+  color: white !important;
+  --tw-text-opacity: 1 !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+.challenge-focus-strip .line.active .char.typed.correct,
+.challenge-focus-strip .line.active span.typed.correct {
+  color: #2dd4bf !important;
+}
+.challenge-focus-strip .line.active .char.typed.error,
+.challenge-focus-strip .line.active span.typed.error {
+  color: #fb7185 !important;
 }
 
 /* ============================================
@@ -325,8 +375,9 @@
   border: 1px solid rgba(99, 102, 241, 0.4);
 }
 .challenge-memory-mode .text-container.hidden-text .char:not(.typed) {
-  color: transparent !important;
+  color: rgba(148, 163, 184, 0.12) !important;
   text-shadow: none !important;
+  filter: blur(1px);
 }
 
 /* ============================================
@@ -338,24 +389,39 @@
   box-shadow: 0 0 40px rgba(107, 114, 128, 0.4) !important;
 }
 .challenge-blind-start::before {
-  content: '👁️ BLIND START - Reveal as You Type';
+  content: '👁️ BLIND START - Text is blurred! Type correctly to reveal each character';
   display: block;
   text-align: center;
-  color: #d1d5db;
+  color: #fbbf24;
   font-size: 0.85rem;
   font-weight: 600;
-  padding: 8px;
-  background: rgba(107, 114, 128, 0.2);
+  padding: 10px 12px;
+  background: rgba(251, 191, 36, 0.15);
   border-radius: 8px;
   margin-bottom: 12px;
-  border: 1px solid rgba(107, 114, 128, 0.4);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  animation: blindPulse 2s ease-in-out infinite;
+}
+@keyframes blindPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 .challenge-blind-start .char:not(.typed) {
-  filter: blur(8px);
-  transition: filter 0.3s ease;
+  filter: blur(1.5px);
+  transition: filter 0.4s ease;
+  color: #d1d5db !important;
+  opacity: 0.8;
 }
-.challenge-blind-start .char.typed {
+.challenge-blind-start .char.typed.correct {
   filter: none;
+  color: #34d399 !important;
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+  transition: all 0.3s ease;
+}
+.challenge-blind-start .char.typed.error {
+  filter: none;
+  color: #f87171 !important;
+  transition: all 0.3s ease;
 }
 
 /* ============================================
@@ -367,21 +433,23 @@
   box-shadow: 0 0 40px rgba(167, 139, 250, 0.4) !important;
 }
 .challenge-reverse-words::before {
-  content: '🔄 REVERSE WORDS - Right to Left!';
+  content: '🔄 REVERSE WORDS - Each word is spelled backwards! Type the reversed spelling';
   display: block;
   text-align: center;
-  color: #c4b5fd;
+  color: #fbbf24;
   font-size: 0.85rem;
   font-weight: 600;
-  padding: 8px;
-  background: rgba(167, 139, 250, 0.2);
+  padding: 10px 12px;
+  background: rgba(251, 191, 36, 0.15);
   border-radius: 8px;
   margin-bottom: 12px;
-  border: 1px solid rgba(167, 139, 250, 0.4);
+  border: 1px solid rgba(251, 191, 36, 0.4);
 }
+/* Reverse Words: Don't use RTL direction - words are already reversed via JS.
+   Keep normal LTR direction so cursor and typing flow naturally */
 .challenge-reverse-words .typing-text {
-  direction: rtl;
-  text-align: right;
+  direction: ltr;
+  text-align: left;
 }
 
 /* ============================================
@@ -463,11 +531,27 @@
   border: 1px dashed rgba(148, 163, 184, 0.4);
 }
 .challenge-vanishing-words .char.typed.correct {
-  animation: vanishChar 0.8s ease forwards;
+  animation: vanishChar 1.8s ease forwards;
 }
 @keyframes vanishChar {
-  0% { opacity: 1; transform: scale(1) translateY(0); }
-  100% { opacity: 0; transform: scale(0.3) translateY(-15px); }
+  0% { opacity: 1; transform: scale(1) translateY(0); color: #67e8f9; }
+  40% { opacity: 1; transform: scale(1) translateY(0); color: #22d3ee; }
+  60% { opacity: 0.7; transform: scale(0.95) translateY(-3px); color: #a5b4fc; }
+  100% { opacity: 0.15; transform: scale(0.9) translateY(-4px); color: #64748b; }
+}
+/* Keep a faint ghost of vanished characters so user can still see what they typed */
+.challenge-vanishing-words .char.typed.correct {
+  min-width: 0.6ch;
+}
+/* When Memory Mode + Vanishing Words are both active, keep typed text MORE visible
+   since untyped text is already hidden by memory mode */
+.challenge-memory-mode.challenge-vanishing-words .char.typed.correct {
+  animation: vanishCharSoft 3s ease forwards;
+}
+@keyframes vanishCharSoft {
+  0% { opacity: 1; transform: scale(1); color: #67e8f9; }
+  60% { opacity: 0.9; transform: scale(1); color: #22d3ee; }
+  100% { opacity: 0.35; transform: scale(0.95); color: #94a3b8; }
 }
 
 /* ============================================

@@ -23,6 +23,7 @@ interface UnifiedTypingBoxProps {
   onNewPrompt: () => void;
   language?: Language;
   testConfig?: TestConfigInfo;
+  memoryModeHidden?: boolean;
 }
 
 const UnifiedTypingBox = ({
@@ -35,7 +36,8 @@ const UnifiedTypingBox = ({
   highlightWord = false,
   onNewPrompt,
   language = 'english',
-  testConfig
+  testConfig,
+  memoryModeHidden = false
 }: UnifiedTypingBoxProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -308,16 +310,16 @@ const UnifiedTypingBox = ({
       const absIdx = lineStart + idx;
       const typed = inputValue[absIdx];
       
-      let cls = 'char text-gray-400'; // untyped - soft gray
-      let style = {};
+      // Use CSS classes only - NO inline colors (so challenges.css can override)
+      let cls = 'char untyped';
+      let errorStyle: React.CSSProperties = {};
       
       if (absIdx < inputValue.length) {
         if (typed === char) {
-          cls = 'char text-cyan-300 typed correct'; // Correct - light cyan
+          cls = 'char typed correct';
         } else {
-          cls = 'char text-red-300 typed error'; // Wrong - muted red
-          // Rounded underline for error (instead of background)
-          style = {
+          cls = 'char typed error';
+          errorStyle = {
             textDecoration: 'underline wavy',
             textUnderlineOffset: '3px',
             textDecorationColor: 'rgba(252, 165, 165, 0.6)',
@@ -330,7 +332,7 @@ const UnifiedTypingBox = ({
       const isCursor = absIdx === inputValue.length;
       
       return (
-        <span key={idx} className={`${cls} relative`} style={style}>
+        <span key={idx} className={`${cls} relative`} style={errorStyle}>
           {isCursor && (
             <span 
               className="cursor absolute left-0 top-0 w-[2px] h-full rounded-full"
@@ -353,7 +355,7 @@ const UnifiedTypingBox = ({
       <div
         ref={containerRef}
         onClick={() => inputRef.current?.focus()}
-        className={`relative cursor-text rounded-xl text-container ${
+        className={`relative cursor-text rounded-xl text-container ${memoryModeHidden ? 'hidden-text' : ''} ${
           isFocused ? 'ring-2 ring-cyan-500/40' : ''
         }`}
         style={{
@@ -398,12 +400,20 @@ const UnifiedTypingBox = ({
             // Determine if this is the active line (where cursor is)
             const cursorPos = inputValue.length;
             const lineEnd = lineStart + (line?.length || 0);
-            const isActiveLine = cursorPos >= lineStart && cursorPos <= lineEnd;
+            
+            // Primary check: cursor is within this line's character range
+            const isInRange = cursorPos >= lineStart && cursorPos <= lineEnd;
+            // Fallback check: use currentLineIndex relative to visible start
+            const isCurrentByIndex = (visibleLines.startIndex + idx) === currentLineIndex;
+            // Last resort: if this is first visible line and cursor is 0, mark as active
+            const isFirstLineDefault = idx === 0 && cursorPos === 0;
+            // Line is active if any check passes
+            const isActiveLine = isInRange || isCurrentByIndex || isFirstLineDefault;
             
             // Always render the line container, even if empty
             return (
               <div 
-                key={currentLineIndex + idx} 
+                key={`line-${visibleLines.startIndex + idx}-${currentLineIndex}`} 
                 className={`whitespace-pre line ${isActiveLine ? 'active' : ''}`}
                 style={{ 
                   minHeight: `${lineHeightPx}px`,
@@ -466,19 +476,19 @@ const UnifiedTypingBox = ({
 
         {/* Pre-test: All Challenges Showcase - only before Start Test */}
         {!testStarted && !testReady && inputValue.length === 0 && (
-          <div className="absolute inset-0 flex flex-col rounded-xl pointer-events-none z-10 overflow-hidden" style={{background: 'linear-gradient(135deg, rgba(8,12,21,0.95) 0%, rgba(10,18,36,0.92) 50%, rgba(8,12,21,0.95) 100%)'}}>
+          <div className="absolute inset-0 flex flex-col rounded-xl pointer-events-none z-10 overflow-hidden" style={{background: '#080c15'}}>
             
             {/* Header */}
-            <div className="text-center pt-3 pb-2 px-4 flex-shrink-0">
-              <h3 className="text-sm font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent tracking-wide uppercase">
+            <div className="text-center pt-2 pb-1 px-4 flex-shrink-0">
+              <h3 className="text-xs font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent tracking-wide uppercase">
                 ⚡ 25 Typing Challenges
               </h3>
-              <p className="text-[10px] text-gray-500 mt-0.5">Pick one from the dropdown above & level up your skills</p>
+              <p className="text-[9px] text-gray-500 mt-0.5">Pick one from the dropdown above & level up your skills</p>
             </div>
 
-            {/* Scrolling challenges grid */}
-            <div className="flex-1 overflow-hidden relative px-3 pb-2">
-              <div className="challenge-scroll-container grid grid-cols-3 sm:grid-cols-5 gap-1 sm:gap-1.5 auto-rows-min" style={{animation: 'challengeScroll 20s linear infinite'}}>
+            {/* Challenges grid - all 25 visible */}
+            <div className="flex-1 overflow-hidden relative px-2 pb-1">
+              <div className="grid grid-cols-5 gap-1 h-full auto-rows-fr">
                 {[
                   { emoji: '📝', name: 'One Line', color: 'from-purple-500/20 to-purple-900/20', border: 'border-purple-500/30', text: 'text-purple-300' },
                   { emoji: '🔦', name: 'Focus Strip', color: 'from-cyan-500/20 to-cyan-900/20', border: 'border-cyan-500/30', text: 'text-cyan-300' },
@@ -506,18 +516,16 @@ const UnifiedTypingBox = ({
                   { emoji: '👤', name: 'Ghost Race', color: 'from-slate-500/20 to-gray-900/20', border: 'border-slate-500/30', text: 'text-slate-300' },
                   { emoji: '☠️', name: 'Hardcore', color: 'from-red-600/20 to-red-950/20', border: 'border-red-600/30', text: 'text-red-400' },
                 ].map((c, i) => (
-                  <div key={i} className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg bg-gradient-to-b ${c.color} border ${c.border} transition-all hover:scale-105`} style={{animationDelay: `${i * 0.05}s`}}>
-                    <span className="text-base leading-none">{c.emoji}</span>
-                    <span className={`text-[9px] font-medium mt-0.5 ${c.text} whitespace-nowrap`}>{c.name}</span>
+                  <div key={i} className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-md bg-gradient-to-b ${c.color} border ${c.border}`}>
+                    <span className="text-sm leading-none">{c.emoji}</span>
+                    <span className={`text-[8px] font-medium mt-0.5 ${c.text} whitespace-nowrap`}>{c.name}</span>
                   </div>
                 ))}
               </div>
-              {/* Bottom fade */}
-              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[rgba(8,12,21,1)] to-transparent pointer-events-none"></div>
             </div>
 
             {/* Bottom CTA */}
-            <div className="text-center pb-2.5 pt-1 flex-shrink-0">
+            <div className="text-center pb-2 pt-1 flex-shrink-0">
               {testReady ? (
                 <div className="inline-flex items-center gap-2 bg-green-500/15 border border-green-500/30 px-4 py-1 rounded-full animate-pulse">
                   <span className="w-2 h-2 rounded-full bg-green-400 animate-ping"></span>
