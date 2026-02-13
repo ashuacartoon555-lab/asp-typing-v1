@@ -1,4 +1,4 @@
-import { useState } from 'react';
+  import { useState } from 'react';
 import Header from '@/components/typing/Header';
 import Footer from '@/components/typing/Footer';
 import { GraduationCap, FileText, Clock, Award, Users, Building, TrendingUp, BarChart3, Zap, Shield, Target, Lightbulb } from 'lucide-react';
