@@ -709,12 +709,14 @@ export function useTypingTest(): UseTypingTestReturn {
       }
       lastKeyTimeRef.current = now;
 
-      // Record keystroke for ghost replay
-      keystrokeRecordsRef.current.push({
-        char: typedChar,
-        timestamp: now - testStartPerfTimeRef.current,
-        index: value.length - 1
-      });
+      // Record keystroke for ghost replay (only correct characters — Step 11)
+      if (typedChar === expectedChar) {
+        keystrokeRecordsRef.current.push({
+          char: typedChar,
+          timestamp: now - testStartPerfTimeRef.current,
+          index: value.length - 1
+        });
+      }
       
       try {
         if (typedChar !== expectedChar) {
@@ -782,8 +784,8 @@ export function useTypingTest(): UseTypingTestReturn {
         weakKeys: weakKeys.slice(0, 10) // Top 10 weak keys
       });
 
-      // Save ghost replay for PB racing
-      if (keystrokeRecordsRef.current.length > 0) {
+      // Save ghost replay for PB racing (Step 12: minimum 20 chars, 20 seconds)
+      if (keystrokeRecordsRef.current.length >= 20 && displayTime >= 20) {
         storageManager.saveGhostReplay({
           keystrokes: keystrokeRecordsRef.current,
           wpm,

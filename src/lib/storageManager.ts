@@ -639,12 +639,12 @@ class StorageManager {
   /**
    * === PROMPT CRAFTING SCORES ===
    */
-  getPromptCraftingScores(): { score: string; wpm: number; date: string }[] {
+  getPromptCraftingScores(): any[] {
     const data = localStorage.getItem(`${this.PREFIX}promptCraftingScores`);
     return data ? JSON.parse(data) : [];
   }
 
-  savePromptCraftingScore(entry: { score: string; wpm: number; date: string }): void {
+  savePromptCraftingScore(entry: Record<string, any>): void {
     const scores = this.getPromptCraftingScores();
     scores.push(entry);
     if (scores.length > 50) scores.shift();
