@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { storageManager } from '@/lib/storageManager';
+import { useState, useEffect, useCallback } from 'react';
+import { storageManager, KeyStatsData } from '@/lib/storageManager';
 
-// Extended word bank for smart drill generation
+// Extended word bank for smart drill generation (A-Z)
 const DRILL_WORD_BANK: Record<string, string[]> = {
   'a': ['amazing', 'abstract', 'arrange', 'banana', 'canvas', 'dance', 'grand', 'balance', 'catalyst', 'available'],
   'b': ['bubble', 'bamboo', 'absorb', 'ribbon', 'cobble', 'global', 'browser', 'abstract', 'object', 'observable'],
@@ -31,146 +31,221 @@ const DRILL_WORD_BANK: Record<string, string[]> = {
   'z': ['zigzag', 'puzzle', 'buzzer', 'frozen', 'horizon', 'realize', 'organize', 'magazine', 'utilized', 'optimize'],
 };
 
+// Random filler words for the 10% random portion of drills
+const RANDOM_WORDS = [
+  'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had',
+  'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his',
+  'how', 'its', 'may', 'new', 'now', 'old', 'see', 'way', 'who', 'boy',
+  'did', 'let', 'put', 'say', 'she', 'too', 'use', 'just', 'because', 'good',
+  'each', 'make', 'like', 'long', 'look', 'many', 'come', 'could', 'people', 'write',
+];
+
+export interface WeakKeyInfo {
+  key: string;
+  avgLatency: number;
+  errorRate: number;
+  count: number;
+  errors: number;
+  level: 'fast' | 'medium' | 'weak';
+}
+
 export const useWeaknessTracker = () => {
-  const [weakKeys, setWeakKeys] = useState<{ [key: string]: number }>({});
-  const [topWeakKeys, setTopWeakKeys] = useState<string[]>([]);
-  const [slowKeys, setSlowKeys] = useState<{ key: string; avgLatency: number }[]>([]);
+  const [keyStats, setKeyStats] = useState<KeyStatsData>({});
+  const [weakKeysList, setWeakKeysList] = useState<WeakKeyInfo[]>([]);
+  const [allKeyData, setAllKeyData] = useState<WeakKeyInfo[]>([]);
 
-  useEffect(() => {
-    const loadWeakKeys = () => {
-      const keys = storageManager.getWeakKeys();
-      setWeakKeys(keys);
+  // Load/reload key stats from localStorage
+  const reload = useCallback(() => {
+    const stats = storageManager.getKeyStats();
+    setKeyStats(stats);
 
-      const top = storageManager.getTopWeakKeys(5);
-      setTopWeakKeys(top);
+    // Build all-key data for heatmap
+    const allKeys: WeakKeyInfo[] = Object.entries(stats)
+      .filter(([_, s]) => s.count >= 2)
+      .map(([key, s]) => {
+        const avg = s.totalLatency / s.count;
+        const errRate = (s.errors / s.count) * 100;
+        return {
+          key,
+          avgLatency: Math.round(avg),
+          errorRate: Math.round(errRate),
+          count: s.count,
+          errors: s.errors,
+          level: avg < 180 ? 'fast' as const : avg < 250 ? 'medium' as const : 'weak' as const,
+        };
+      })
+      .sort((a, b) => b.avgLatency - a.avgLatency);
+    setAllKeyData(allKeys);
 
-      // Load latency-based slow keys
-      const slow = storageManager.getSlowKeys(250);
-      setSlowKeys(slow);
-    };
-
-    loadWeakKeys();
-
-    window.addEventListener('storage', loadWeakKeys);
-    window.addEventListener('test-completed', loadWeakKeys);
-    return () => {
-      window.removeEventListener('storage', loadWeakKeys);
-      window.removeEventListener('test-completed', loadWeakKeys);
-    };
+    // Weak keys: avg > 250ms OR errorRate > 15%, minimum 10 samples
+    const weak = allKeys.filter(k => k.count >= 10 && (k.avgLatency > 250 || k.errorRate > 15));
+    setWeakKeysList(weak);
   }, []);
 
-  const getWeaknessPercentage = (key: string) => {
-    const total = Object.values(weakKeys).reduce((a, b) => a + b, 0);
-    return total ? Math.round(((weakKeys[key] || 0) / total) * 100) : 0;
-  };
+  useEffect(() => {
+    reload();
+    window.addEventListener('storage', reload);
+    window.addEventListener('test-completed', reload);
+    return () => {
+      window.removeEventListener('storage', reload);
+      window.removeEventListener('test-completed', reload);
+    };
+  }, [reload]);
 
-  const getWeaknessLevel = (key: string) => {
-    const count = weakKeys[key] || 0;
-    if (count === 0) return 'excellent';
-    if (count <= 2) return 'good';
-    if (count <= 5) return 'fair';
-    if (count <= 10) return 'weak';
-    return 'very-weak';
-  };
+  /**
+   * Heatmap color for a key based on avg latency
+   * Green: <180ms | Yellow: 180-250ms | Red: >250ms
+   */
+  const getKeyColor = useCallback((key: string): 'green' | 'yellow' | 'red' | 'none' => {
+    const stat = keyStats[key.toLowerCase()];
+    if (!stat || stat.count < 2) return 'none';
+    const avg = stat.totalLatency / stat.count;
+    if (avg < 180) return 'green';
+    if (avg < 250) return 'yellow';
+    return 'red';
+  }, [keyStats]);
 
-  const startWeaknessTraining = () => {
-    // Combine error-based weak keys + latency-based slow keys
-    const combinedWeakKeys = [...new Set([
-      ...topWeakKeys,
-      ...slowKeys.map(k => k.key)
-    ])];
-
-    const trainingText = generateSmartTrainingText(combinedWeakKeys);
+  /**
+   * Get per-key stats for heatmap tooltip
+   */
+  const getKeyStat = useCallback((key: string) => {
+    const stat = keyStats[key.toLowerCase()];
+    if (!stat || stat.count < 2) return null;
     return {
-      weakKeys: combinedWeakKeys,
+      avgLatency: Math.round(stat.totalLatency / stat.count),
+      count: stat.count,
+      errors: stat.errors,
+      errorRate: Math.round((stat.errors / stat.count) * 100),
+    };
+  }, [keyStats]);
+
+  /**
+   * Start personalized drill with Smart Practice Ratio:
+   * 60% weak key words | 30% normal key words | 10% random words
+   */
+  const startWeaknessTraining = useCallback(() => {
+    const weakKeys = weakKeysList.map(w => w.key);
+    const trainingText = generateSmartDrill(weakKeys);
+    return {
+      weakKeys,
       trainingText,
-      slowKeys,
+      weakKeysList,
       target: {
         accuracy: 95,
-        message: combinedWeakKeys.length > 0
-          ? `Focus on: ${combinedWeakKeys.join(', ').toUpperCase()}. Train until 95%+ accuracy & <200ms per key!`
-          : 'No weak keys detected! Keep typing to identify them.'
+        message: weakKeys.length > 0
+          ? `Focus on: ${weakKeys.join(', ').toUpperCase()}. Train until 95%+ accuracy & <200ms per key!`
+          : 'No weak keys detected yet! Complete more tests (10+ keystrokes per key needed).'
       }
     };
-  };
+  }, [weakKeysList]);
 
-  // Smart drill generation: uses both error data + latency data
-  const generateSmartTrainingText = (keys: string[]): string => {
-    if (keys.length === 0) return 'No weak keys detected! Keep typing to identify them.';
+  /**
+   * Smart Drill Generator with 60/30/10 ratio
+   */
+  const generateSmartDrill = (weakKeys: string[]): string => {
+    if (weakKeys.length === 0) return 'No weak keys detected yet! Complete more tests to identify them.';
 
-    const selectedWords: string[] = [];
+    const TARGET_WORDS = 40;
+    const weakCount = Math.round(TARGET_WORDS * 0.6);   // 60% weak
+    const normalCount = Math.round(TARGET_WORDS * 0.3);  // 30% normal
+    const randomCount = TARGET_WORDS - weakCount - normalCount; // 10% random
 
-    // For each weak key, pull words from the drill bank
-    keys.forEach(key => {
-      const normalizedKey = key.toLowerCase();
-      const bankWords = DRILL_WORD_BANK[normalizedKey] || [];
-      if (bankWords.length > 0) {
-        // Pick 4-6 random words per weak key
-        const shuffled = [...bankWords].sort(() => Math.random() - 0.5);
-        selectedWords.push(...shuffled.slice(0, Math.min(6, shuffled.length)));
+    // 1) 60% — Words containing weak keys
+    const weakWords: string[] = [];
+    weakKeys.forEach(key => {
+      const bank = DRILL_WORD_BANK[key.toLowerCase()] || [];
+      if (bank.length > 0) {
+        const shuffled = [...bank].sort(() => Math.random() - 0.5);
+        weakWords.push(...shuffled.slice(0, Math.ceil(weakCount / weakKeys.length) + 1));
       }
     });
-
-    // If we found drill words, also create some bigram combinations
-    if (keys.length >= 2) {
-      // Create compound words hitting multiple weak keys
-      const bigramWords: string[] = [];
-      for (let i = 0; i < keys.length - 1; i++) {
-        for (let j = i + 1; j < Math.min(keys.length, i + 3); j++) {
-          const k1 = keys[i].toLowerCase();
-          const k2 = keys[j].toLowerCase();
-          // Find words containing both keys
-          Object.values(DRILL_WORD_BANK).flat().forEach(word => {
-            if (word.includes(k1) && word.includes(k2) && !selectedWords.includes(word)) {
-              bigramWords.push(word);
+    // Bigram words (contain 2+ weak keys)
+    if (weakKeys.length >= 2) {
+      const allWords = Object.values(DRILL_WORD_BANK).flat();
+      for (let i = 0; i < weakKeys.length - 1; i++) {
+        for (let j = i + 1; j < Math.min(weakKeys.length, i + 3); j++) {
+          const k1 = weakKeys[i].toLowerCase();
+          const k2 = weakKeys[j].toLowerCase();
+          allWords.forEach(word => {
+            if (word.includes(k1) && word.includes(k2) && !weakWords.includes(word)) {
+              weakWords.push(word);
             }
           });
         }
       }
-      selectedWords.push(...bigramWords.slice(0, 5));
     }
+    const finalWeak = [...new Set(weakWords)].sort(() => Math.random() - 0.5).slice(0, weakCount);
 
-    // Deduplicate and shuffle
-    const unique = [...new Set(selectedWords)].sort(() => Math.random() - 0.5);
-    
-    // Generate 2-3 repetitions for muscle memory training
-    const repeated = [...unique, ...unique.slice(0, Math.ceil(unique.length / 2))];
-    return repeated.sort(() => Math.random() - 0.5).slice(0, 30).join(' ');
+    // 2) 30% — Normal words (non-weak keys with data)
+    const normalKeys = Object.keys(keyStats).filter(k => !weakKeys.includes(k));
+    const normalWords: string[] = [];
+    normalKeys.forEach(key => {
+      const bank = DRILL_WORD_BANK[key.toLowerCase()] || [];
+      if (bank.length > 0) {
+        normalWords.push(bank[Math.floor(Math.random() * bank.length)]);
+      }
+    });
+    const finalNormal = [...new Set(normalWords)].sort(() => Math.random() - 0.5).slice(0, normalCount);
+
+    // 3) 10% — Random filler words
+    const finalRandom = [...RANDOM_WORDS].sort(() => Math.random() - 0.5).slice(0, randomCount);
+
+    // Combine, shuffle, and join
+    const combined = [...finalWeak, ...finalNormal, ...finalRandom].sort(() => Math.random() - 0.5);
+    return combined.join(' ');
   };
 
-  const getTrainingFocus = () => {
-    // Merge error-based and latency-based data
-    const errorBased = Object.entries(weakKeys)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([key, count]) => ({
-        key,
-        errors: count,
-        level: getWeaknessLevel(key),
-        avgLatency: slowKeys.find(s => s.key === key)?.avgLatency || null
-      }));
+  /**
+   * Get training focus summary
+   */
+  const getTrainingFocus = useCallback(() => {
+    return weakKeysList.slice(0, 5).map(w => ({
+      key: w.key,
+      errors: w.errors,
+      level: w.level,
+      avgLatency: w.avgLatency,
+      errorRate: w.errorRate,
+    }));
+  }, [weakKeysList]);
 
-    // Add any slow keys not already in error list
-    const additionalSlow = slowKeys
-      .filter(s => !errorBased.find(e => e.key === s.key))
-      .slice(0, 2)
-      .map(s => ({
-        key: s.key,
-        errors: weakKeys[s.key] || 0,
-        level: 'slow' as const,
-        avgLatency: s.avgLatency
-      }));
+  // Legacy compat exports
+  const topWeakKeys = weakKeysList.map(w => w.key);
+  const slowKeys = weakKeysList.map(w => ({ key: w.key, avgLatency: w.avgLatency }));
+  const weakKeys = Object.fromEntries(
+    Object.entries(keyStats).map(([k, v]) => [k, v.errors])
+  );
 
-    return [...errorBased, ...additionalSlow];
+  const getWeaknessPercentage = (key: string) => {
+    const total = Object.values(keyStats).reduce((sum, s) => sum + s.errors, 0);
+    const keyErrors = keyStats[key.toLowerCase()]?.errors || 0;
+    return total ? Math.round((keyErrors / total) * 100) : 0;
+  };
+
+  const getWeaknessLevel = (key: string) => {
+    const stat = keyStats[key.toLowerCase()];
+    if (!stat || stat.count < 2) return 'excellent';
+    const avg = stat.totalLatency / stat.count;
+    if (avg < 180) return 'excellent';
+    if (avg < 250) return 'good';
+    if (avg < 350) return 'weak';
+    return 'very-weak';
   };
 
   return {
+    // New API
+    keyStats,
+    weakKeysList,
+    allKeyData,
+    getKeyColor,
+    getKeyStat,
+    reload,
+    // Legacy compat
     weakKeys,
     topWeakKeys,
     slowKeys,
     getWeaknessPercentage,
     getWeaknessLevel,
     startWeaknessTraining,
-    getTrainingFocus
+    getTrainingFocus,
   };
 };

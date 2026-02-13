@@ -41,7 +41,18 @@ export interface WeaknessData {
 }
 
 export interface KeyLatencyData {
-  [key: string]: number[]; // character -> array of latencies in ms
+  [key: string]: number[]; // character -> array of latencies in ms (legacy)
+}
+
+// New keyStats structure per Gemini roadmap
+export interface KeyStatEntry {
+  totalLatency: number;
+  count: number;
+  errors: number;
+}
+
+export interface KeyStatsData {
+  [key: string]: KeyStatEntry;
 }
 
 export interface KeystrokeRecord {
@@ -484,50 +495,129 @@ class StorageManager {
   }
 
   /**
-   * === KEY LATENCY TRACKING ===
+   * === KEY STATS TRACKING (AI Weakness Heatmap) ===
+   * Structure: { "a": { totalLatency, count, errors }, ... }
+   * Weak condition: avg > 250ms OR errorRate > 15% (ignore count < 10)
+   * Latency cap: ignore > 2000ms (user paused)
    */
-  getKeyLatencyData(): KeyLatencyData {
-    const data = localStorage.getItem(`${this.PREFIX}keyLatency`);
-    return data ? JSON.parse(data) : {};
-  }
-
-  saveKeyLatencyData(data: KeyLatencyData): void {
-    localStorage.setItem(`${this.PREFIX}keyLatency`, JSON.stringify(data));
-  }
-
-  updateKeyLatency(key: string, latency: number): void {
-    const data = this.getKeyLatencyData();
-    if (!data[key]) data[key] = [];
-    data[key].push(latency);
-    // Keep only last 20 entries per key
-    if (data[key].length > 20) data[key].shift();
-    this.saveKeyLatencyData(data);
-  }
-
-  getSlowKeys(thresholdMs: number = 250): { key: string; avgLatency: number }[] {
-    const data = this.getKeyLatencyData();
-    const slowKeys: { key: string; avgLatency: number }[] = [];
-    for (const [key, latencies] of Object.entries(data)) {
-      if (latencies.length >= 3) {
-        const avg = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-        if (avg > thresholdMs) {
-          slowKeys.push({ key, avgLatency: Math.round(avg) });
+  getKeyStats(): KeyStatsData {
+    const data = localStorage.getItem(`${this.PREFIX}keyStats`);
+    if (data) {
+      const raw: KeyStatsData = JSON.parse(data);
+      // Normalize: merge duplicate case variants (e.g. 'S' + 's' → 's')
+      const normalized: KeyStatsData = {};
+      let needsSave = false;
+      for (const [key, stat] of Object.entries(raw)) {
+        const k = key.toLowerCase();
+        if (k !== key) needsSave = true; // found uppercase key
+        if (!normalized[k]) {
+          normalized[k] = { ...stat };
+        } else {
+          // Merge: combine counts, latencies, errors
+          normalized[k].totalLatency += stat.totalLatency;
+          normalized[k].count += stat.count;
+          normalized[k].errors += stat.errors;
+          needsSave = true;
         }
+      }
+      // Re-save normalized data to fix storage permanently
+      if (needsSave) {
+        localStorage.setItem(`${this.PREFIX}keyStats`, JSON.stringify(normalized));
+      }
+      return normalized;
+    }
+    // Migrate from legacy keyLatency if exists
+    const legacy = localStorage.getItem(`${this.PREFIX}keyLatency`);
+    if (legacy) {
+      const legacyData: KeyLatencyData = JSON.parse(legacy);
+      const migrated: KeyStatsData = {};
+      for (const [key, latencies] of Object.entries(legacyData)) {
+        const k = key.toLowerCase();
+        if (!migrated[k]) {
+          migrated[k] = {
+            totalLatency: latencies.reduce((a, b) => a + b, 0),
+            count: latencies.length,
+            errors: 0
+          };
+        } else {
+          migrated[k].totalLatency += latencies.reduce((a, b) => a + b, 0);
+          migrated[k].count += latencies.length;
+        }
+      }
+      localStorage.setItem(`${this.PREFIX}keyStats`, JSON.stringify(migrated));
+      return migrated;
+    }
+    return {};
+  }
+
+  saveKeyStats(data: KeyStatsData): void {
+    localStorage.setItem(`${this.PREFIX}keyStats`, JSON.stringify(data));
+  }
+
+  // Batch update: called once at test end or every 5s (not per keypress)
+  batchUpdateKeyStats(entries: { key: string; latency: number; correct: boolean }[]): void {
+    const stats = this.getKeyStats();
+    for (const entry of entries) {
+      // Latency cap: ignore > 2000ms (user pause)
+      if (entry.latency > 2000) continue;
+      const k = entry.key.toLowerCase();
+      if (!stats[k]) stats[k] = { totalLatency: 0, count: 0, errors: 0 };
+      stats[k].totalLatency += entry.latency;
+      stats[k].count += 1;
+      if (!entry.correct) stats[k].errors += 1;
+    }
+    this.saveKeyStats(stats);
+  }
+
+  // Legacy compat: still works for components using old API
+  updateKeyLatency(key: string, latency: number): void {
+    if (latency > 2000) return; // Cap
+    const stats = this.getKeyStats();
+    const k = key.toLowerCase();
+    if (!stats[k]) stats[k] = { totalLatency: 0, count: 0, errors: 0 };
+    stats[k].totalLatency += latency;
+    stats[k].count += 1;
+    this.saveKeyStats(stats);
+  }
+
+  /**
+   * Get weak keys: avg > 250ms OR errorRate > 15%, minimum 10 samples
+   */
+  getSlowKeys(thresholdMs: number = 250): { key: string; avgLatency: number; errorRate: number }[] {
+    const stats = this.getKeyStats();
+    const slowKeys: { key: string; avgLatency: number; errorRate: number }[] = [];
+    for (const [key, stat] of Object.entries(stats)) {
+      if (stat.count < 10) continue; // Ignore low sample
+      const avg = stat.totalLatency / stat.count;
+      const errorRate = (stat.errors / stat.count) * 100;
+      if (avg > thresholdMs || errorRate > 15) {
+        slowKeys.push({ key, avgLatency: Math.round(avg), errorRate: Math.round(errorRate) });
       }
     }
     return slowKeys.sort((a, b) => b.avgLatency - a.avgLatency);
   }
 
-  getAllKeyLatencies(): { key: string; avgLatency: number; count: number }[] {
-    const data = this.getKeyLatencyData();
-    return Object.entries(data)
-      .filter(([_, latencies]) => latencies.length >= 2)
-      .map(([key, latencies]) => ({
+  /**
+   * Get ALL key latencies for heatmap rendering
+   * Returns: Green (<180ms), Yellow (180-250ms), Red (>250ms)
+   */
+  getAllKeyLatencies(): { key: string; avgLatency: number; count: number; errors: number; errorRate: number }[] {
+    const stats = this.getKeyStats();
+    return Object.entries(stats)
+      .filter(([_, stat]) => stat.count >= 2)
+      .map(([key, stat]) => ({
         key,
-        avgLatency: Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length),
-        count: latencies.length
+        avgLatency: Math.round(stat.totalLatency / stat.count),
+        count: stat.count,
+        errors: stat.errors,
+        errorRate: stat.count > 0 ? Math.round((stat.errors / stat.count) * 100) : 0
       }))
       .sort((a, b) => b.avgLatency - a.avgLatency);
+  }
+
+  // Legacy compat
+  getKeyLatencyData(): KeyLatencyData {
+    return {};
   }
 
   /**

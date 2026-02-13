@@ -17,7 +17,7 @@ interface PodcastState {
 }
 
 // Available playback speeds
-const SPEEDS = [0.75, 1.0, 1.25, 1.5, 2.0];
+const SPEEDS = [0.15, 0.25, 0.50, 0.75, 1.0, 1.25, 1.5, 2.0];
 
 export function usePodcastMode({
   enabled,
@@ -80,6 +80,37 @@ export function usePodcastMode({
       revealedChars: newRevealed,
     }));
   }, [inputValue, promptText, enabled, testStarted]);
+
+  // Auto-pause TTS if user stops typing for >3 seconds
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idlePausedRef = useRef(false);
+
+  useEffect(() => {
+    if (!enabled || !testStarted || !ttsAvailable || !podcastState.isPlaying) return;
+
+    // Clear existing idle timer
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+
+    // If we previously idle-paused, resume now that user is typing again
+    if (idlePausedRef.current) {
+      idlePausedRef.current = false;
+      window.speechSynthesis.resume();
+      setPodcastState(prev => ({ ...prev, isPaused: false }));
+    }
+
+    // Set new idle timer — pause audio after 3s of no typing
+    idleTimerRef.current = setTimeout(() => {
+      if (!isStoppedRef.current && podcastState.isPlaying && !podcastState.isPaused) {
+        idlePausedRef.current = true;
+        window.speechSynthesis.pause();
+        setPodcastState(prev => ({ ...prev, isPaused: true }));
+      }
+    }, 3000);
+
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [inputValue.length, enabled, testStarted, ttsAvailable, podcastState.isPlaying]);
 
   // Pause TTS on error (optional extreme difficulty)
   useEffect(() => {

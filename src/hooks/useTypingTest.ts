@@ -119,6 +119,10 @@ export function useTypingTest(): UseTypingTestReturn {
   const keystrokeRecordsRef = useRef<{ char: string; timestamp: number; index: number }[]>([]);
   const testStartPerfTimeRef = useRef<number>(0);
 
+  // Batch key stats buffer — flushed every 5s or on test end (not per keypress)
+  const keyStatsBatchRef = useRef<{ key: string; latency: number; correct: boolean }[]>([]);
+  const batchFlushTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const { playSound } = useSound();
 
   // Keep refs in sync
@@ -693,9 +697,14 @@ export function useTypingTest(): UseTypingTestReturn {
       const now = performance.now();
       if (lastKeyTimeRef.current > 0) {
         const latency = now - lastKeyTimeRef.current;
-        // Record per-key latency (only for reasonable latencies < 3 seconds)
-        if (latency < 3000 && expectedChar) {
-          storageManager.updateKeyLatency(expectedChar.toLowerCase(), Math.round(latency));
+        // Buffer per-key stats (latency cap 2000ms, ignore pauses)
+        if (latency < 2000 && expectedChar) {
+          const isCorrect = typedChar === expectedChar;
+          keyStatsBatchRef.current.push({
+            key: expectedChar.toLowerCase(),
+            latency: Math.round(latency),
+            correct: isCorrect
+          });
         }
       }
       lastKeyTimeRef.current = now;
@@ -808,6 +817,17 @@ export function useTypingTest(): UseTypingTestReturn {
 
     // Achievement notifications
     const achievements = storageManager.getAchievements();
+
+    // Flush key stats batch to localStorage on test end
+    if (keyStatsBatchRef.current.length > 0) {
+      storageManager.batchUpdateKeyStats(keyStatsBatchRef.current);
+      keyStatsBatchRef.current = [];
+    }
+    // Clear the 5s flush timer
+    if (batchFlushTimerRef.current) {
+      clearInterval(batchFlushTimerRef.current);
+      batchFlushTimerRef.current = null;
+    }
     const newlyUnlocked = achievements.filter((a: any) => 
       a.unlockedAt && new Date(a.unlockedAt).getTime() > Date.now() - 5000
     );
@@ -855,7 +875,17 @@ export function useTypingTest(): UseTypingTestReturn {
     // Reset keystroke tracking for new test
     lastKeyTimeRef.current = 0;
     keystrokeRecordsRef.current = [];
+    keyStatsBatchRef.current = [];
     testStartPerfTimeRef.current = performance.now();
+
+    // Start 5-second batch flush interval
+    if (batchFlushTimerRef.current) clearInterval(batchFlushTimerRef.current);
+    batchFlushTimerRef.current = setInterval(() => {
+      if (keyStatsBatchRef.current.length > 0) {
+        storageManager.batchUpdateKeyStats(keyStatsBatchRef.current);
+        keyStatsBatchRef.current = [];
+      }
+    }, 5000);
     
     // Load fresh text in background (non-blocking)
     if (difficulty !== 'custom') {

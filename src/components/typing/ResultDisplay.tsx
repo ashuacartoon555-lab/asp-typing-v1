@@ -3,6 +3,9 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import ErrorAnalysis from './ErrorAnalysis';
 import CertificateGenerator from '@/components/CertificateGenerator';
+import KeyboardHeatmap from '@/components/KeyboardHeatmap';
+import WeakSpotTraining from '@/components/WeakSpotTraining';
+import { useWeaknessTracker } from '@/hooks/useWeaknessTracker';
 
 interface ResultDisplayProps {
   result: {
@@ -17,11 +20,38 @@ interface ResultDisplayProps {
   };
   motivation: { emoji: string; text: string } | null;
   onNewTest: () => void;
+  onStartDrill?: (drillText: string) => void;
   promptText?: string;
   inputValue?: string;
 }
 
-const ResultDisplay = ({ result, motivation, onNewTest, promptText = '', inputValue = '' }: ResultDisplayProps) => {
+/** Self-contained section that renders Heatmap + Weak Keys + Drill button */
+const WeaknessSection = ({ onStartDrill }: { onStartDrill?: (drillText: string) => void }) => {
+  const { weakKeysList, startWeaknessTraining } = useWeaknessTracker();
+  const training = startWeaknessTraining();
+
+  const handleStartDrill = () => {
+    if (onStartDrill && training.trainingText) {
+      onStartDrill(training.trainingText);
+    }
+  };
+
+  return (
+    <div className="space-y-4 mt-4">
+      {/* Keyboard Heatmap */}
+      <KeyboardHeatmap />
+
+      {/* Weak Keys + Personalized Drill */}
+      <WeakSpotTraining
+        weakKeys={weakKeysList}
+        onStartDrill={handleStartDrill}
+        drillText={training.trainingText}
+      />
+    </div>
+  );
+};
+
+const ResultDisplay = ({ result, motivation, onNewTest, onStartDrill, promptText = '', inputValue = '' }: ResultDisplayProps) => {
   const [showCertificateGenerator, setShowCertificateGenerator] = useState(false);
   const [isShareCardOpen, setIsShareCardOpen] = useState(false);
   const [shareName, setShareName] = useState('Your Result');
@@ -262,6 +292,9 @@ const ResultDisplay = ({ result, motivation, onNewTest, promptText = '', inputVa
           result={result}
         />
       )}
+
+      {/* AI Weakness Heatmap & Personalized Drills */}
+      <WeaknessSection onStartDrill={onStartDrill} />
       
       <div className="flex flex-wrap gap-2 sm:gap-4 justify-center mt-6 sm:mt-8">
         <button 

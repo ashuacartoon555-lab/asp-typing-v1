@@ -944,6 +944,11 @@ const Index = () => {
                 result={result}
                 motivation={motivation}
                 onNewTest={resetTest}
+                onStartDrill={(drillText) => {
+                  setCustomText(drillText);
+                  setDifficulty('custom' as any);
+                  setTimeout(() => resetTest(), 50);
+                }}
                 promptText={promptText}
                 inputValue={inputValue}
               />

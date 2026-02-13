@@ -81,6 +81,11 @@ export function usePromptCrafting() {
     const essentialRatio = essentialFound.length / ESSENTIAL_KEYWORDS.length;
     const hasBonus = bonusFound.length >= 2;
 
+    // Weighted composite score: (WPM × 0.7) + (KeywordBonus × 0.3)
+    // KeywordBonus = (essentialRatio * 80) + (bonusFound count * 5), capped at 100
+    const keywordBonus = Math.min(100, (essentialRatio * 80) + (bonusFound.length * 5));
+    const compositeScore = Math.round((wpm * 0.7) + (keywordBonus * 0.3));
+
     let score: PromptScore;
     let label: string;
     let emoji: string;
@@ -92,25 +97,25 @@ export function usePromptCrafting() {
       label = 'AI Master';
       emoji = '🧠';
       color = 'text-purple-400';
-      feedback = `Exceptional! You typed at ${wpm} WPM with ${essentialFound.length} essential keywords. You think and type like a pro prompt engineer!`;
+      feedback = `Exceptional! You typed at ${wpm} WPM with ${essentialFound.length} essential keywords. Composite Score: ${compositeScore}. You think and type like a pro prompt engineer!`;
     } else if (wpm >= 40 && essentialRatio >= 0.4 && accuracy >= 85) {
       score = 'prompt-engineer';
       label = 'Prompt Engineer';
       emoji = '⚡';
       color = 'text-cyan-400';
-      feedback = `Great work! ${essentialFound.length} keywords captured at ${wpm} WPM. You're building strong prompt crafting skills!`;
+      feedback = `Great work! ${essentialFound.length} keywords captured at ${wpm} WPM. Composite Score: ${compositeScore}. You're building strong prompt crafting skills!`;
     } else if (essentialRatio >= 0.3 || wpm >= 30) {
       score = 'prompt-learner';
       label = 'Prompt Learner';
       emoji = '📚';
       color = 'text-yellow-400';
-      feedback = `Good progress! Focus on including keywords like: ${essentialMissed.slice(0, 3).join(', ')}. Speed will come with practice!`;
+      feedback = `Good progress! Score: ${compositeScore}. Focus on including keywords like: ${essentialMissed.slice(0, 3).join(', ')}. Speed will come with practice!`;
     } else {
       score = 'beginner';
       label = 'Beginner';
       emoji = '🌱';
       color = 'text-green-400';
-      feedback = `Keep practicing! Try to include prompt keywords: "Act as", "Explain", "Format". These are the building blocks of AI prompts!`;
+      feedback = `Keep practicing! Score: ${compositeScore}. Try to include prompt keywords: "Act as", "Explain", "Format". These are the building blocks of AI prompts!`;
     }
 
     // Save score
